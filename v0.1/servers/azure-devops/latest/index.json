@@ -1,0 +1,8 @@
+{
+  "name": "azure-devops",
+  "version": "1.0.0",
+  "source": {
+    "type": "http",
+    "url": "https://mcp.azure.com/v1"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "playwright",
+  "version": "1.0.0",
+  "source": {
+    "type": "stdio",
+    "command": "npx",
+    "args": ["-y", "@modelcontextprotocol/server-playwright"]
+  }
+}

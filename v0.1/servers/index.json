@@ -1,0 +1,12 @@
+{
+  "servers": [
+    {
+      "name": "azure-devops",
+      "description": "Manage Azure DevOps work items and pipelines"
+    },
+    {
+      "name": "playwright",
+      "description": "Browser automation for web testing"
+    }
+  ]
+}
