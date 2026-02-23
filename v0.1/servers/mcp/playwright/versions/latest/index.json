@@ -7,6 +7,7 @@
   "packages": [
     {
       "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
       "runtimeHint": "npx",
       "identifier": "@modelcontextprotocol/playwright",
       "transport": {
