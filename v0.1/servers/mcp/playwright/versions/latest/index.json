@@ -2,20 +2,26 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "mcp/playwright",
   "title": "Playwright",
-  "description": "Browser automation and web testing for GitHub Copilot",
+  "description": "Browser automation for web testing",
   "version": "1.0.0",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "runtimeHint": "npx",
-      "identifier": "@modelcontextprotocol/playwright",
-      "transport": {
-        "type": "stdio"
+      "identifier": "@executeautomation/playwright-mcp-server",
+      "runtimeArguments": [
+        { 
+          "name": "-y", 
+          "type": "positional" 
+        }
+      ],
+      "transport": { 
+        "type": "stdio" 
       }
     }
   ],
-  "install": {
-    "type": "manual"
+  "install": { 
+    "type": "manual" 
   }
 }

@@ -9,7 +9,13 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "runtimeHint": "npx",
-      "identifier": "@modelcontextprotocol/azure-devops",
+      "identifier": "@mcp-apps/azure-devops-mcp-server",
+      "runtimeArguments": [
+        { 
+          "name": "-y", 
+          "type": "positional"
+        }
+      ],
       "transport": { 
         "type": "stdio" 
       }
