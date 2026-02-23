@@ -1,13 +1,20 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "playwright",
+  "title": "Playwright",
+  "description": "Browser automation and web testing for GitHub Copilot",
   "version": "1.0.0",
-  "source": {
-    "type": "stdio",
-    "command": "npx",
-    "args": ["-y", "@modelcontextprotocol/server-playwright"]
-  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "runtimeHint": "npx",
+      "identifier": "@modelcontextprotocol/server-playwright",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ],
   "install": {
-     "type": "manual"
+    "type": "manual"
   }
 }

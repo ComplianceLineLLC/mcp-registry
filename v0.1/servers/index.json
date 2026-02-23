@@ -1,12 +1,55 @@
 {
+  "metadata": {
+    "count": 2
+  },
   "servers": [
     {
-      "name": "azure-devops",
-      "description": "Manage Azure DevOps work items and pipelines"
+      "_meta": {
+        "io.modelcontextprotocol.registry/official": {
+          "isLatest": true,
+          "status": "active",
+          "updatedAt": "2026-02-22T22:00:00Z"
+        }
+      },
+      "server": {
+        "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+        "name": "azure-devops",
+        "title": "Azure DevOps",
+        "description": "Manage Azure DevOps work items and pipelines",
+        "version": "1.0.0",
+        "remotes": [
+          {
+            "type": "http",
+            "url": "https://mcp.azure.com/v1"
+          }
+        ]
+      }
     },
     {
-      "name": "playwright",
-      "description": "Browser automation for web testing"
+      "_meta": {
+        "io.modelcontextprotocol.registry/official": {
+          "isLatest": true,
+          "status": "active",
+          "updatedAt": "2026-02-22T22:00:00Z"
+        }
+      },
+      "server": {
+        "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+        "name": "playwright",
+        "title": "Playwright",
+        "description": "Browser automation for web testing",
+        "version": "1.0.0",
+        "packages": [
+          {
+            "registryType": "npm",
+            "runtimeHint": "npx",
+            "identifier": "@modelcontextprotocol/server-playwright",
+            "transport": {
+              "type": "stdio"
+            }
+          }
+        ]
+      }
     }
   ]
 }
