@@ -1,6 +1,6 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "playwright",
+  "name": "mcp/playwright",
   "title": "Playwright",
   "description": "Browser automation and web testing for GitHub Copilot",
   "version": "1.0.0",
@@ -8,7 +8,7 @@
     {
       "registryType": "npm",
       "runtimeHint": "npx",
-      "identifier": "@modelcontextprotocol/server-playwright",
+      "identifier": "@modelcontextprotocol/playwright",
       "transport": {
         "type": "stdio"
       }

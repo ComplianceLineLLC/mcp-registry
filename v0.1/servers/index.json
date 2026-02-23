@@ -43,7 +43,7 @@
           {
             "registryType": "npm",
             "runtimeHint": "npx",
-            "identifier": "@modelcontextprotocol/server-playwright",
+            "identifier": "@modelcontextprotocol/playwright",
             "transport": {
               "type": "stdio"
             }
