@@ -12,7 +12,7 @@
         }
       },
       "server": {
-        "$ref": "/v0.1/servers/mcp/azure-devops/versions/latest/index.json"
+        "$ref": "mcp/azure-devops/versions/latest/index.json"
       }
     },
     {
@@ -24,7 +24,7 @@
         }
       },
       "server": {
-        "$ref": "/v0.1/servers/mcp/playwright/versions/latest/index.json"
+        "$ref": "mcp/playwright/versions/latest/index.json"
       }
     }
   ]
