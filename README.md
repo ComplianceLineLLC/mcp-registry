@@ -17,12 +17,22 @@ By centralizing our MCP configurations here, we achieve:
 ## 🛠 Future Integrations (Phase 2)
 | Server Name | Type | Description |
 | :--- | :--- | :--- |
-| **Chrome DevTools** | Remote (HTTP) | Integration with Chrome DevTools for debugging and performance analysis. |
-| **LaunchDarkly** | Remote (HTTP) | Feature flag management and experimentation. |
-| **Markdown** | Local (stdio) | Markdown rendering and preview assistance. |
+| **Chrome DevTools** | Local (npx) | Integration with Chrome DevTools for debugging and performance analysis. |
 | **Microsoft Learn** | Remote (HTTP) | Access to Microsoft Learn content and interactive tutorials. |
+| **Angular** | Local (npx) | Angular CLI integration for local development: scaffolding, component generation, build/serve, testing, and linting automation. |
+
+## 🛠 Future Integrations (Phase 3)
+| Server Name | Type | Description |
+| :--- | :--- | :--- |
 | **Postman** | Remote (HTTP) | API testing and automation integration. |
 | **SonarQube** | Remote (HTTP) | Code quality and security analysis. |
+
+## 🛠 Future Integrations (TBD)
+| Server Name | Type | Description |
+| :--- | :--- | :--- |
+| **LaunchDarkly** | Remote (HTTP) | Feature flag management and experimentation. |
+| **Markdown** | Local (stdio) | Markdown rendering and preview assistance. |
+
 
 ## 🚀 How to Use
 1. **Org Admins:** The registry will be hosted via GitHub Pages at: `https://[your-org].github.io/[repo-name]/`
