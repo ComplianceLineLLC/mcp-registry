@@ -11,7 +11,7 @@ By centralizing our MCP configurations here, we achieve:
 ## 🛠 Current Integrations
 | Server Name | Type | Description |
 | :--- | :--- | :--- |
-| **Azure DevOps** | Remote (HTTP) | Integration with work items, PRs, and pipelines. |
+| **Azure DevOps** | Local wrapper (npx) — communicates with Microsoft-managed Azure DevOps (HTTP) | Integration with work items, PRs, and pipelines. |
 | **Playwright** | Local (stdio) | Browser automation and end-to-end testing assistance. |
 
 ## 🛠 Future Integrations (Phase 2)
@@ -41,7 +41,7 @@ By centralizing our MCP configurations here, we achieve:
 ## 📂 Repository Structure
 This repo follows the **MCP Registry Specification v0.1**. Because this is a static site, we use an `index.json` pattern:
 * `/v0.1/servers/index.json` - The master list of available tools.
-* `/v0.1/servers/[name]/versions/latest/index.json` - Specific execution logic for each tool.
+* `/v0.1/servers/mcp/[name]/versions/latest/index.json` - Specific execution logic for each tool.
 
 ## 🔐 Contribution Policy
 1. All changes must be made via a **Feature Branch**.
