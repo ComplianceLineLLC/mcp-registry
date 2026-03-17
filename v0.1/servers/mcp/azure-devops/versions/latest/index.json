@@ -5,7 +5,7 @@
   "description": "Manage Azure DevOps work items and pipelines",
   "version": "1.0.0",
   "executionModel": "local-wrapper-remote-http",
-  "notes": "Runs locally via npx (stdio) but communicates with Microsoft-managed Azure DevOps REST API over HTTPS. The service API is remote and hosted by Microsoft; this package is a local wrapper that performs HTTP requests to the remote service.",
+  "notes": "Runs locally via npx (stdio) but communicates with Microsoft-managed Azure DevOps REST API over HTTPS at base URL https://mcp.azure.com/v1. The service API is remote and hosted by Microsoft; this package is a local wrapper that performs HTTP requests to the remote service.",
   "packages": [
     {
       "registryType": "npm",
