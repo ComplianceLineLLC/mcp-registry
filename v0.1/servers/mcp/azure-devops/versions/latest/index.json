@@ -11,7 +11,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "runtimeHint": "npx",
-      "identifier": "@mcp-apps/azure-devops-mcp-server@1.0.0",
+      "identifier": "@mcp-apps/azure-devops-mcp-server",
       "runtimeArguments": [
         { 
           "name": "-y", 

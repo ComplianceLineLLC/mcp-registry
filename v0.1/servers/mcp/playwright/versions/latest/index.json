@@ -9,7 +9,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "runtimeHint": "npx",
-      "identifier": "@executeautomation/playwright-mcp-server@1.0.0",
+      "identifier": "@executeautomation/playwright-mcp-server",
       "runtimeArguments": [
         { 
           "name": "-y", 
