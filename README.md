@@ -35,8 +35,34 @@ By centralizing our MCP configurations here, we achieve:
 
 
 ## 🚀 How to Use
-1. **Org Admins:** The registry will be hosted via GitHub Pages at: `https://[your-org].github.io/[repo-name]/`
+1. **Org Admins:** The registry will be hosted via GitHub Pages at: `https://compliancelinellc.github.io/mcp-registry/`
 2. **Developers:** In VS Code or Visual Studio, ensure you are signed into the organization account. Type `@mcp` in Copilot Chat to see the "Organization Approved" tools.
+
+## 🔧 Using Individual MCP Servers
+Before using an MCP, search for available MCPs on your machine in Copilot Chat by typing `@mcp`. Install the MCP you want to use from within VS Code or Visual Studio (follow the editor prompts or use the Extensions/Marketplace). After installation the MCP should be available to Copilot Chat and ready to respond to prompts.
+
+**Playwright** (Local - stdio)
+- Search for available MCPs on your machine by typing `@mcp` in Copilot Chat and locate the Playwright MCP.
+- Install the Playwright MCP with VS Code or Visual Studio.
+- Once installed, you can ask Copilot Chat to generate tests. Example prompt:
+
+  `Generate a Playwright test to check if the "log on" button is visible at https://qa.mycompliancemanagement.com/login`
+
+  The Playwright MCP will assist with test code and local browser automation.
+
+**Azure DevOps** (Local wrapper - npx)
+- Search for available MCPs on your machine by typing `@mcp` in Copilot Chat and locate the Azure DevOps MCP.
+- Install the Azure DevOps MCP with VS Code or Visual Studio.
+- Create a Personal Access Token (PAT) in your Azure DevOps account.
+- In an elevated PowerShell prompt set the PAT as an environment variable (replace `YOUR_PAT`):
+
+  `$env:AZURE_DEVOPS_EXT_PAT = 'YOUR_PAT'`
+
+- After setting the PAT, you can ask Copilot Chat example prompts such as:
+
+  `List my recent work items in Azure DevOps`
+
+  The Azure DevOps MCP will use your PAT to call Azure DevOps APIs and return results.
 
 ## 📂 Repository Structure
 This repo follows the **MCP Registry Specification v0.1**. Because this is a static site, we use an `index.json` pattern:
