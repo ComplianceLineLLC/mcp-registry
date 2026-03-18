@@ -1,0 +1,31 @@
+{
+  "metadata": {
+    "count": 2
+  },
+  "servers": [
+    {
+      "_meta": {
+        "io.modelcontextprotocol.registry/official": {
+          "isLatest": true,
+          "status": "active",
+          "updatedAt": "2026-02-22T22:00:00Z"
+        }
+      },
+      "server": {
+        "$ref": "mcp/azure-devops/versions/latest/index.json"
+      }
+    },
+    {
+      "_meta": {
+        "io.modelcontextprotocol.registry/official": {
+          "isLatest": true,
+          "status": "active",
+          "updatedAt": "2026-02-22T22:00:00Z"
+        }
+      },
+      "server": {
+        "$ref": "mcp/playwright/versions/latest/index.json"
+      }
+    }
+  ]
+}
