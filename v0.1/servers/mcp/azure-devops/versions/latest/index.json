@@ -1,0 +1,29 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "mcp/azure-devops",
+  "title": "Azure DevOps",
+  "description": "Manage Azure DevOps work items and pipelines",
+  "version": "1.0.0",
+  "executionModel": "local-wrapper-remote-http",
+  "notes": "Runs locally via npx (stdio) but communicates with Microsoft-managed Azure DevOps REST API over HTTPS at base URL https://mcp.azure.com/v1. The service API is remote and hosted by Microsoft; this package is a local wrapper that performs HTTP requests to the remote service.",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "runtimeHint": "npx",
+      "identifier": "@mcp-apps/azure-devops-mcp-server",
+      "runtimeArguments": [
+        { 
+          "name": "-y", 
+          "type": "positional"
+        }
+      ],
+      "transport": { 
+        "type": "stdio" 
+      }
+    }
+  ],
+  "install": { 
+    "type": "manual" 
+  }
+}
