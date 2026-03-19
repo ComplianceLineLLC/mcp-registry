@@ -74,7 +74,7 @@
         "io.modelcontextprotocol.registry/official": {
           "isLatest": true,
           "status": "active",
-          "updatedAt": "2026-03-19T15:28:30Z"
+          "updatedAt": "2026-03-19T17:50:00Z"
         }
       },
       "server": {
@@ -88,7 +88,7 @@
             "registryType": "npm",
             "registryBaseUrl": "https://registry.npmjs.org",
             "runtimeHint": "npx",
-            "identifier": "@chrome-tools/devtools-mcp",
+            "identifier": "chrome-devtools-mcp",
             "runtimeArguments": [
               {
                 "name": "-y",
@@ -130,7 +130,7 @@
         "io.modelcontextprotocol.registry/official": {
           "isLatest": true,
           "status": "active",
-          "updatedAt": "2026-03-19T15:28:30Z"
+          "updatedAt": "2026-03-19T17:50:00Z"
         }
       },
       "server": {
@@ -144,7 +144,7 @@
             "registryType": "npm",
             "registryBaseUrl": "https://registry.npmjs.org",
             "runtimeHint": "npx",
-            "identifier": "@angular/mcp",
+            "identifier": "angular-mcp-server",
             "runtimeArguments": [
               {
                 "name": "-y",
