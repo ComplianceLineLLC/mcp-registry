@@ -53,16 +53,18 @@ Before using an MCP, search for available MCPs on your machine in Copilot Chat b
 **Azure DevOps** (Local wrapper - npx)
 - Search for available MCPs on your machine by typing `@mcp` in Copilot Chat and locate the Azure DevOps MCP.
 - Install the Azure DevOps MCP with VS Code or Visual Studio.
-- Create a Personal Access Token (PAT) in your Azure DevOps account.
-- In an elevated PowerShell prompt set the PAT as an environment variable (replace `YOUR_PAT`):
+- In the PowerShell terminal run the following commands:
 
-  `$env:AZURE_DEVOPS_EXT_PAT = 'YOUR_PAT'`
+   ```ps
+   az devops login --org https://dev.azure.com/Ethico
+   az devops configure --defaults organization=https://dev.azure.com/Ethico project=NWOW
+   ```
 
-- After setting the PAT, you can ask Copilot Chat example prompts such as:
+- After setting the PAT (and restarting Visual Studio or VS Code), you can ask Copilot Chat example prompts such as:
 
-  `List my recent work items in Azure DevOps`
+  `List recent work items assigned to me in Azure DevOps`
 
-  The Azure DevOps MCP will use your PAT to call Azure DevOps APIs and return results.
+  You may be then prompted in the browser to sign in with your organizational account and grant permissions to the MCP. Once authenticated, the Azure DevOps MCP will respond to your prompt with relevant information from Azure DevOps.
 
 ## 📂 Repository Structure
 This repo follows the **MCP Registry Specification v0.1**. Because this is a static site, we use an `index.json` pattern:
