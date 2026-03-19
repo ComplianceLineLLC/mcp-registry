@@ -73,8 +73,8 @@
       "_meta": {
         "io.modelcontextprotocol.registry/official": {
           "isLatest": true,
-          "status": "active",
-          "updatedAt": "2026-03-19T17:50:00Z"
+          "status": "planned",
+          "updatedAt": "2026-03-19T18:10:00Z"
         }
       },
       "server": {
