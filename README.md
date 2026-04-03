@@ -103,11 +103,13 @@ Before using an MCP, search for available MCPs on your machine in Copilot Chat b
 
 - Once connected, you can ask Copilot Chat prompts such as:
 
-  `List all my Figma files`
+  `@mcp Create a new Figma file called "MCP New Test Design"`
 
-  `Show me the design components in [filename]`
+  `Show me the design components in [Figma design URL]`
 
-  `Get the color palette from [filename]`
+  `@mcp Please list out the layers in my file "MCP Test Design" from [Figma design URL]`
+
+  `Get the color palette from [Figma design URL]`
 
   `What text styles are defined in my Figma file?`
 
