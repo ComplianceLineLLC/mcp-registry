@@ -70,6 +70,31 @@ Before using an MCP, search for available MCPs on your machine in Copilot Chat b
 
   You may be then prompted in the browser to sign in with your organizational account and grant permissions to the MCP. Once authenticated, the Azure DevOps MCP will respond to your prompt with relevant information from Azure DevOps.
 
+Alternatively, check your VS Code User Settings by pressing `Ctrl+Shift+P` and then type "Preferences: Open User Settings (JSON)"
+Look for the github.copilot.chat.mcp section. If you don't find it, add it along with setting a Personal Access Token (PAT):
+```json
+    "github.copilot.chat.agent.thinkingTool": true,
+    "chat.viewSessions.orientation": "stacked",
+    "chat.mcp.gallery.enabled": true,
+    "github.copilot.chat.mcp.servers": {
+        "azure-dev": {
+            "command": "npx",
+            "args": ["-y", "@azure/mcp-server-azure-devops"],
+            "env": {
+                "AZURE_DEVOPS_PAT": "your-pat-here",
+                "AZURE_DEVOPS_ORG_URL": "https://dev.azure.com/Ethico"
+            }
+        }
+    },
+```
+
+Key points:
+
+- Replace "your-pat-here" with your actual PAT token
+- The PAT needs Release (Read), Build (Read), and Project and Team (Read) scopes
+- After adding this, reload VS Code (`Ctrl+Shift+P` → "Developer: Reload Window")
+
+
 ---
 ## **Chrome DevTools** (Local - npx)
 - Search for available MCPs on your machine by typing `@mcp` in Copilot Chat and locate the Chrome DevTools MCP.
