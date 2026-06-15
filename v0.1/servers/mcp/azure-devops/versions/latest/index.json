@@ -18,12 +18,6 @@
         "registryBaseUrl": "https://registry.npmjs.org",
         "runtimeHint": "npx",
         "identifier": "@mcp-apps/azure-devops-mcp-server",
-        "runtimeArguments": [
-          {
-            "value": "-y",
-            "type": "positional"
-          }
-        ],
         "transport": {
           "type": "stdio"
         }

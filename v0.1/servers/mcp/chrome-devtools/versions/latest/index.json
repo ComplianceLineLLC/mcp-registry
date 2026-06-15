@@ -18,12 +18,6 @@
         "registryBaseUrl": "https://registry.npmjs.org",
         "runtimeHint": "npx",
         "identifier": "chrome-devtools-mcp",
-        "runtimeArguments": [
-          {
-            "value": "-y",
-            "type": "positional"
-          }
-        ],
         "transport": {
           "type": "stdio"
         }
