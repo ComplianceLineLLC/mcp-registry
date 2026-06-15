@@ -1,27 +1,33 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "mcp/chrome-devtools",
-  "title": "Chrome DevTools",
-  "description": "Integration with Chrome DevTools for debugging and performance analysis.",
-  "version": "0.1.0",
-  "packages": [
-    {
-      "registryType": "npm",
-      "registryBaseUrl": "https://registry.npmjs.org",
-      "runtimeHint": "npx",
-      "identifier": "@chrome-tools/devtools-mcp",
-      "runtimeArguments": [
-        {
-          "name": "-y",
-          "type": "positional"
-        }
-      ],
-      "transport": {
-        "type": "stdio"
-      }
+  "_meta": {
+    "io.modelcontextprotocol.registry/official": {
+      "isLatest": true,
+      "status": "planned",
+      "updatedAt": "2026-03-19T18:10:00Z"
     }
-  ],
-  "install": {
-    "type": "manual"
+  },
+  "server": {
+    "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+    "name": "mcp/chrome-devtools",
+    "title": "Chrome DevTools",
+    "description": "Integration with Chrome DevTools for debugging and performance analysis.",
+    "version": "0.1.0",
+    "packages": [
+      {
+        "registryType": "npm",
+        "registryBaseUrl": "https://registry.npmjs.org",
+        "runtimeHint": "npx",
+        "identifier": "@chrome-tools/devtools-mcp",
+        "runtimeArguments": [
+          {
+            "name": "-y",
+            "type": "positional"
+          }
+        ],
+        "transport": {
+          "type": "stdio"
+        }
+      }
+    ]
   }
 }
