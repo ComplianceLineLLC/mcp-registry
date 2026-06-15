@@ -11,11 +11,13 @@ By centralizing our MCP configurations here, we achieve:
 ## 🛠 Current Integrations
 | Server Name | Type | Description |
 | :--- | :--- | :--- |
-| **Azure DevOps** | Local wrapper (npx) — communicates with Microsoft-managed Azure DevOps (HTTP) | Integration with work items, PRs, and pipelines. |
-| **Playwright** | Local (stdio) | Browser automation and end-to-end testing assistance. |
-| **Chrome DevTools** | Local (npx) | Integration with Chrome DevTools for debugging and performance analysis. |
-| **Microsoft Learn** | Remote (HTTP) | Access to Microsoft Learn content and interactive tutorials. |
 | **Angular** | Local (npx) | Angular CLI integration for local development: scaffolding, component generation, build/serve, testing, and linting automation. |
+| **Azure DevOps** | Local wrapper (npx) — communicates with Microsoft-managed Azure DevOps (HTTP) | Integration with work items, PRs, and pipelines. |
+| **Chrome DevTools** | Local (npx) | Integration with Chrome DevTools for debugging and performance analysis. |
+| **Figma** | Remote (HTTP) | Official Figma MCP server for design file access and collaboration. |
+| **Microsoft Learn** | Remote (HTTP) | Access to Microsoft Learn content and interactive tutorials. |
+| **Playwright** | Local (stdio) | Browser automation and end-to-end testing assistance. |
+
 
 ## 🛠 Future Integrations (Phase 3)
 | Server Name | Type | Description |
@@ -37,16 +39,22 @@ By centralizing our MCP configurations here, we achieve:
 ## 🔧 Using Individual MCP Servers
 Before using an MCP, search for available MCPs on your machine in Copilot Chat by typing `@mcp`. Install the MCP you want to use from within VS Code or Visual Studio (follow the editor prompts or use the Extensions/Marketplace). After installation the MCP should be available to Copilot Chat and ready to respond to prompts.
 
-**Playwright** (Local - stdio)
-- Search for available MCPs on your machine by typing `@mcp` in Copilot Chat and locate the Playwright MCP.
-- Install the Playwright MCP with VS Code or Visual Studio.
-- Once installed, you can ask Copilot Chat to generate tests. Example prompt:
+---
+## **Angular** (Local - npx)
+- Search for available MCPs on your machine by typing `@mcp` in Copilot Chat and locate the Angular MCP.
+- Install the Angular MCP with VS Code or Visual Studio.
+- Once installed, open your Angular project folder in VS Code, then ask Copilot Chat prompts such as:
 
-  `Generate a Playwright test to check if the "log on" button is visible at https://qa.mycompliancemanagement.com/login`
+  `Generate a new Angular component called UserProfile`
 
-  The Playwright MCP will assist with test code and local browser automation.
+  `Run the Angular unit tests for this project`
 
-**Azure DevOps** (Local wrapper - npx)
+  `Scaffold a new Angular service for authentication`
+
+  The Angular MCP will invoke the Angular CLI on your behalf, scaffolding files and running build or test commands within your current workspace.
+
+---
+## **Azure DevOps** (Local wrapper - npx)
 - Search for available MCPs on your machine by typing `@mcp` in Copilot Chat and locate the Azure DevOps MCP.
 - Install the Azure DevOps MCP with VS Code or Visual Studio.
 - In the PowerShell terminal run the following commands:
@@ -62,7 +70,33 @@ Before using an MCP, search for available MCPs on your machine in Copilot Chat b
 
   You may be then prompted in the browser to sign in with your organizational account and grant permissions to the MCP. Once authenticated, the Azure DevOps MCP will respond to your prompt with relevant information from Azure DevOps.
 
-**Chrome DevTools** (Local - npx)
+Alternatively, check your VS Code User Settings by pressing `Ctrl+Shift+P` and then type "Preferences: Open User Settings (JSON)"
+Look for the github.copilot.chat.mcp section. If you don't find it, add it along with setting a Personal Access Token (PAT):
+```json
+    "github.copilot.chat.agent.thinkingTool": true,
+    "chat.viewSessions.orientation": "stacked",
+    "chat.mcp.gallery.enabled": true,
+    "github.copilot.chat.mcp.servers": {
+        "azure-dev": {
+            "command": "npx",
+            "args": ["-y", "@azure/mcp-server-azure-devops"],
+            "env": {
+                "AZURE_DEVOPS_PAT": "your-pat-here",
+                "AZURE_DEVOPS_ORG_URL": "https://dev.azure.com/Ethico"
+            }
+        }
+    },
+```
+
+Key points:
+
+- Replace "your-pat-here" with your actual PAT token
+- The PAT needs Release (Read), Build (Read), and Project and Team (Read) scopes
+- After adding this, reload VS Code (`Ctrl+Shift+P` → "Developer: Reload Window")
+
+
+---
+## **Chrome DevTools** (Local - npx)
 - Search for available MCPs on your machine by typing `@mcp` in Copilot Chat and locate the Chrome DevTools MCP.
 - Install the Chrome DevTools MCP with VS Code or Visual Studio.
 - Once installed, open or navigate to the page you want to inspect, then ask Copilot Chat prompts such as:
@@ -73,7 +107,43 @@ Before using an MCP, search for available MCPs on your machine in Copilot Chat b
 
   The Chrome DevTools MCP will connect to your local Chrome browser using the DevTools Protocol and return diagnostic information directly in Copilot Chat.
 
-**Microsoft Learn** (Remote - HTTP)
+---
+## **Figma** (Remote - HTTP)
+- Search for available MCPs on your machine by typing `@mcp` in Copilot Chat and locate the Figma MCP.
+- Install the Figma MCP with VS Code or Visual Studio. Because this is a remote MCP, no local package installation is required — the client connects directly to `https://mcp.figma.com/mcp`.
+- You may be prompted to sign in with your Figma account to access your design files and projects.
+
+  **Getting Started (No Existing Designs):**
+  If you don't have existing Figma designs, you can quickly create a test file to verify the MCP is working:
+  1. Go to [figma.com](https://figma.com) and sign in (free account works)
+  2. Click "New design file" to create a blank canvas
+  3. Add a few basic elements:
+     - Create a rectangle (press `R`) and style it with a color
+     - Add text (press `T`) with a heading like "My Test App"
+     - Create a button component (draw a rectangle + text, then right-click → "Create component")
+  4. Name your file something memorable (e.g., "MCP Test Design")
+  5. Copy the file URL from your browser
+
+  Alternatively, duplicate a [Figma Community template](https://www.figma.com/community) to start with a professional design system.
+
+- Once connected, you can ask Copilot Chat prompts such as:
+
+  `@mcp Create a new Figma file called "MCP New Test Design"`
+
+  `Show me the design components in [Figma design URL]`
+
+  `@mcp Please list out the layers in my file "MCP Test Design" from [Figma design URL]`
+
+  `Get the color palette from [Figma design URL]`
+
+  `What text styles are defined in my Figma file?`
+
+  `Export the button component as SVG`
+
+  The Figma MCP will access your Figma files and return design information, allowing you to integrate design system data directly into your development workflow. The MCP can read design tokens (colors, typography, spacing), components, layers, and export assets—bridging the gap between design and code.
+
+---
+## **Microsoft Learn** (Remote - HTTP)
 - Search for available MCPs on your machine by typing `@mcp` in Copilot Chat and locate the Microsoft Learn MCP.
 - Install the Microsoft Learn MCP with VS Code or Visual Studio. Because this is a remote MCP, no local package installation is required — the client connects directly to `https://learn.microsoft.com/api/mcp`.
 - You may be prompted to sign in with your Microsoft account to access personalized learning content.
@@ -85,19 +155,17 @@ Before using an MCP, search for available MCPs on your machine in Copilot Chat b
 
   The Microsoft Learn MCP will query the Microsoft Learn catalog and return relevant documentation and tutorial links.
 
-**Angular** (Local - npx)
-- Search for available MCPs on your machine by typing `@mcp` in Copilot Chat and locate the Angular MCP.
-- Install the Angular MCP with VS Code or Visual Studio.
-- Once installed, open your Angular project folder in VS Code, then ask Copilot Chat prompts such as:
+---
+## **Playwright** (Local - stdio)
+- Search for available MCPs on your machine by typing `@mcp` in Copilot Chat and locate the Playwright MCP.
+- Install the Playwright MCP with VS Code or Visual Studio.
+- Once installed, you can ask Copilot Chat to generate tests. Example prompt:
 
-  `Generate a new Angular component called UserProfile`
+  `Generate a Playwright test to check if the "log on" button is visible at https://qa.mycompliancemanagement.com/login`
 
-  `Run the Angular unit tests for this project`
+  The Playwright MCP will assist with test code and local browser automation.
 
-  `Scaffold a new Angular service for authentication`
-
-  The Angular MCP will invoke the Angular CLI on your behalf, scaffolding files and running build or test commands within your current workspace.
-
+---
 ## 📂 Repository Structure
 This repo follows the **MCP Registry Specification v0.1**. Because this is a static site, we use an `index.json` pattern:
 * `/v0.1/servers/index.json` - The master list of available tools.

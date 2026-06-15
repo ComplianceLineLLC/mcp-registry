@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "count": 5
+    "count": 6
   },
   "servers": [
     {
@@ -154,6 +154,29 @@
             "transport": {
               "type": "stdio"
             }
+          }
+        ]
+      }
+    },
+    {
+      "_meta": {
+        "io.modelcontextprotocol.registry/official": {
+          "isLatest": true,
+          "status": "active",
+          "updatedAt": "2026-03-31T00:00:00Z"
+        }
+      },
+      "server": {
+        "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+        "name": "mcp/figma",
+        "title": "Figma",
+        "description": "Official Figma MCP server for design file access and collaboration.",
+        "version": "1.0.0",
+        "executionModel": "remote-http",
+        "remotes": [
+          {
+            "transportType": "http",
+            "url": "https://mcp.figma.com/mcp"
           }
         ]
       }
