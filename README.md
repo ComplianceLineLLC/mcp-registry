@@ -13,10 +13,6 @@ By centralizing our MCP configurations here, we achieve:
 | :--- | :--- | :--- |
 | **Azure DevOps** | Local wrapper (npx) — communicates with Microsoft-managed Azure DevOps (HTTP) | Integration with work items, PRs, and pipelines. |
 | **Playwright** | Local (stdio) | Browser automation and end-to-end testing assistance. |
-
-## 🛠 Future Integrations (Phase 2)
-| Server Name | Type | Description |
-| :--- | :--- | :--- |
 | **Chrome DevTools** | Local (npx) | Integration with Chrome DevTools for debugging and performance analysis. |
 | **Microsoft Learn** | Remote (HTTP) | Access to Microsoft Learn content and interactive tutorials. |
 | **Angular** | Local (npx) | Angular CLI integration for local development: scaffolding, component generation, build/serve, testing, and linting automation. |
@@ -65,6 +61,42 @@ Before using an MCP, search for available MCPs on your machine in Copilot Chat b
   `List recent work items assigned to me in Azure DevOps`
 
   You may be then prompted in the browser to sign in with your organizational account and grant permissions to the MCP. Once authenticated, the Azure DevOps MCP will respond to your prompt with relevant information from Azure DevOps.
+
+**Chrome DevTools** (Local - npx)
+- Search for available MCPs on your machine by typing `@mcp` in Copilot Chat and locate the Chrome DevTools MCP.
+- Install the Chrome DevTools MCP with VS Code or Visual Studio.
+- Once installed, open or navigate to the page you want to inspect, then ask Copilot Chat prompts such as:
+
+  `Analyze the performance profile of the currently open page in Chrome`
+
+  `Show me any console errors on the active Chrome tab`
+
+  The Chrome DevTools MCP will connect to your local Chrome browser using the DevTools Protocol and return diagnostic information directly in Copilot Chat.
+
+**Microsoft Learn** (Remote - HTTP)
+- Search for available MCPs on your machine by typing `@mcp` in Copilot Chat and locate the Microsoft Learn MCP.
+- Install the Microsoft Learn MCP with VS Code or Visual Studio. Because this is a remote MCP, no local package installation is required — the client connects directly to `https://learn.microsoft.com/api/mcp`.
+- You may be prompted to sign in with your Microsoft account to access personalized learning content.
+- Once connected, you can ask Copilot Chat prompts such as:
+
+  `Find Microsoft Learn modules about Azure Bicep`
+
+  `Show me the getting started guide for ASP.NET Core on Microsoft Learn`
+
+  The Microsoft Learn MCP will query the Microsoft Learn catalog and return relevant documentation and tutorial links.
+
+**Angular** (Local - npx)
+- Search for available MCPs on your machine by typing `@mcp` in Copilot Chat and locate the Angular MCP.
+- Install the Angular MCP with VS Code or Visual Studio.
+- Once installed, open your Angular project folder in VS Code, then ask Copilot Chat prompts such as:
+
+  `Generate a new Angular component called UserProfile`
+
+  `Run the Angular unit tests for this project`
+
+  `Scaffold a new Angular service for authentication`
+
+  The Angular MCP will invoke the Angular CLI on your behalf, scaffolding files and running build or test commands within your current workspace.
 
 ## 📂 Repository Structure
 This repo follows the **MCP Registry Specification v0.1**. Because this is a static site, we use an `index.json` pattern:

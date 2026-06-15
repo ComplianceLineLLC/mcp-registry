@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "count": 2
+    "count": 5
   },
   "servers": [
     {
@@ -56,6 +56,95 @@
             "registryBaseUrl": "https://registry.npmjs.org",
             "runtimeHint": "npx",
             "identifier": "@executeautomation/playwright-mcp-server",
+            "runtimeArguments": [
+              {
+                "name": "-y",
+                "type": "positional"
+              }
+            ],
+            "transport": {
+              "type": "stdio"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "_meta": {
+        "io.modelcontextprotocol.registry/official": {
+          "isLatest": true,
+          "status": "planned",
+          "updatedAt": "2026-03-19T18:10:00Z"
+        }
+      },
+      "server": {
+        "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+        "name": "mcp/chrome-devtools",
+        "title": "Chrome DevTools",
+        "description": "Integration with Chrome DevTools for debugging and performance analysis.",
+        "version": "0.1.0",
+        "packages": [
+          {
+            "registryType": "npm",
+            "registryBaseUrl": "https://registry.npmjs.org",
+            "runtimeHint": "npx",
+            "identifier": "chrome-devtools-mcp",
+            "runtimeArguments": [
+              {
+                "name": "-y",
+                "type": "positional"
+              }
+            ],
+            "transport": {
+              "type": "stdio"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "_meta": {
+        "io.modelcontextprotocol.registry/official": {
+          "isLatest": true,
+          "status": "active",
+          "updatedAt": "2026-03-19T15:28:30Z"
+        }
+      },
+      "server": {
+        "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+        "name": "mcp/microsoft-learn",
+        "title": "Microsoft Learn",
+        "description": "Access to Microsoft Learn content and interactive tutorials.",
+        "version": "0.1.0",
+        "executionModel": "remote-http",
+        "remotes": [
+          {
+            "transportType": "http",
+            "url": "https://learn.microsoft.com/api/mcp"
+          }
+        ]
+      }
+    },
+    {
+      "_meta": {
+        "io.modelcontextprotocol.registry/official": {
+          "isLatest": true,
+          "status": "active",
+          "updatedAt": "2026-03-19T17:50:00Z"
+        }
+      },
+      "server": {
+        "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+        "name": "mcp/angular",
+        "title": "Angular",
+        "description": "Angular CLI integration for local development: scaffolding, component generation, build/serve, testing, and linting automation.",
+        "version": "0.1.0",
+        "packages": [
+          {
+            "registryType": "npm",
+            "registryBaseUrl": "https://registry.npmjs.org",
+            "runtimeHint": "npx",
+            "identifier": "angular-mcp-server",
             "runtimeArguments": [
               {
                 "name": "-y",
