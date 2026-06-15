@@ -20,7 +20,7 @@
         "identifier": "@mcp-apps/azure-devops-mcp-server",
         "runtimeArguments": [
           {
-            "name": "-y",
+            "value": "-y",
             "type": "positional"
           }
         ],

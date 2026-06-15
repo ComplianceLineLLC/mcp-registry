@@ -25,7 +25,7 @@
             "identifier": "@mcp-apps/azure-devops-mcp-server",
             "runtimeArguments": [
               {
-                "name": "-y",
+                "value": "-y",
                 "type": "positional"
               }
             ],
@@ -58,7 +58,7 @@
             "identifier": "@executeautomation/playwright-mcp-server",
             "runtimeArguments": [
               {
-                "name": "-y",
+                "value": "-y",
                 "type": "positional"
               }
             ],
@@ -91,7 +91,7 @@
             "identifier": "chrome-devtools-mcp",
             "runtimeArguments": [
               {
-                "name": "-y",
+                "value": "-y",
                 "type": "positional"
               }
             ],
@@ -147,7 +147,7 @@
             "identifier": "angular-mcp-server",
             "runtimeArguments": [
               {
-                "name": "-y",
+                "value": "-y",
                 "type": "positional"
               }
             ],

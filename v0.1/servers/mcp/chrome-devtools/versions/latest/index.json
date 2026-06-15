@@ -17,10 +17,10 @@
         "registryType": "npm",
         "registryBaseUrl": "https://registry.npmjs.org",
         "runtimeHint": "npx",
-        "identifier": "@chrome-tools/devtools-mcp",
+        "identifier": "chrome-devtools-mcp",
         "runtimeArguments": [
           {
-            "name": "-y",
+            "value": "-y",
             "type": "positional"
           }
         ],

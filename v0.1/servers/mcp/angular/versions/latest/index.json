@@ -17,10 +17,10 @@
         "registryType": "npm",
         "registryBaseUrl": "https://registry.npmjs.org",
         "runtimeHint": "npx",
-        "identifier": "@angular/mcp",
+        "identifier": "angular-mcp-server",
         "runtimeArguments": [
           {
-            "name": "-y",
+            "value": "-y",
             "type": "positional"
           }
         ],

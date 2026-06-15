@@ -20,7 +20,7 @@
         "identifier": "@executeautomation/playwright-mcp-server",
         "runtimeArguments": [
           {
-            "name": "-y",
+            "value": "-y",
             "type": "positional"
           }
         ],
