@@ -1,27 +1,27 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "mcp/angular",
-  "title": "Angular",
-  "description": "Angular CLI integration for local development: scaffolding, component generation, build/serve, testing, and linting automation.",
-  "version": "0.1.0",
-  "packages": [
-    {
-      "registryType": "npm",
-      "registryBaseUrl": "https://registry.npmjs.org",
-      "runtimeHint": "npx",
-      "identifier": "@angular/mcp",
-      "runtimeArguments": [
-        {
-          "name": "-y",
-          "type": "positional"
-        }
-      ],
-      "transport": {
-        "type": "stdio"
-      }
+  "_meta": {
+    "io.modelcontextprotocol.registry/official": {
+      "isLatest": true,
+      "status": "active",
+      "updatedAt": "2026-03-19T17:50:00Z"
     }
-  ],
-  "install": {
-    "type": "manual"
+  },
+  "server": {
+    "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+    "name": "mcp/angular",
+    "title": "Angular",
+    "description": "Angular CLI integration for local development: scaffolding, component generation, build/serve, testing, and linting automation.",
+    "version": "0.1.0",
+    "packages": [
+      {
+        "registryType": "npm",
+        "registryBaseUrl": "https://registry.npmjs.org",
+        "runtimeHint": "npx",
+        "identifier": "@angular/cli",
+        "transport": {
+          "type": "stdio"
+        }
+      }
+    ]
   }
 }

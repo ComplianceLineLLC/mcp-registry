@@ -23,12 +23,6 @@
             "registryBaseUrl": "https://registry.npmjs.org",
             "runtimeHint": "npx",
             "identifier": "@mcp-apps/azure-devops-mcp-server",
-            "runtimeArguments": [
-              {
-                "name": "-y",
-                "type": "positional"
-              }
-            ],
             "transport": {
               "type": "stdio"
             }
@@ -56,12 +50,6 @@
             "registryBaseUrl": "https://registry.npmjs.org",
             "runtimeHint": "npx",
             "identifier": "@executeautomation/playwright-mcp-server",
-            "runtimeArguments": [
-              {
-                "name": "-y",
-                "type": "positional"
-              }
-            ],
             "transport": {
               "type": "stdio"
             }
@@ -89,12 +77,6 @@
             "registryBaseUrl": "https://registry.npmjs.org",
             "runtimeHint": "npx",
             "identifier": "chrome-devtools-mcp",
-            "runtimeArguments": [
-              {
-                "name": "-y",
-                "type": "positional"
-              }
-            ],
             "transport": {
               "type": "stdio"
             }
@@ -144,13 +126,7 @@
             "registryType": "npm",
             "registryBaseUrl": "https://registry.npmjs.org",
             "runtimeHint": "npx",
-            "identifier": "angular-mcp-server",
-            "runtimeArguments": [
-              {
-                "name": "-y",
-                "type": "positional"
-              }
-            ],
+            "identifier": "@angular/cli",
             "transport": {
               "type": "stdio"
             }
