@@ -3,21 +3,21 @@
     "io.modelcontextprotocol.registry/official": {
       "isLatest": true,
       "status": "active",
-      "updatedAt": "2026-02-22T22:00:00Z"
+      "updatedAt": "2026-06-16T00:00:00Z"
     }
   },
   "server": {
     "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
     "name": "mcp/azure-devops",
     "title": "Azure DevOps",
-    "description": "Manage Azure DevOps work items and pipelines",
-    "version": "1.0.0",
+    "description": "MCP server for interacting with Azure DevOps",
+    "version": "2.7.0",
     "packages": [
       {
         "registryType": "npm",
         "registryBaseUrl": "https://registry.npmjs.org",
         "runtimeHint": "npx",
-        "identifier": "@mcp-apps/azure-devops-mcp-server",
+        "identifier": "@azure-devops/mcp",
         "transport": {
           "type": "stdio"
         }

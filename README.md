@@ -57,18 +57,32 @@ Before using an MCP, search for available MCPs on your machine in Copilot Chat b
 ## **Azure DevOps** (Local wrapper - npx)
 - Search for available MCPs on your machine by typing `@mcp` in Copilot Chat and locate the Azure DevOps MCP.
 - Install the Azure DevOps MCP with VS Code or Visual Studio.
-- In the PowerShell terminal run the following commands:
+- In your project, add a `.vscode/mcp.json` file (create the `.vscode` folder if it doesn't exist) or updated the VS Code generated file at `C:\Users\<your user>\AppData\Roaming\Code\User\mcp.json` with the following content:
 
-   ```ps
-   az devops login --org https://dev.azure.com/Ethico
-   az devops configure --defaults organization=https://dev.azure.com/Ethico project=NWOW
-   ```
+  ```json
+  {
+    "inputs": [
+      {
+        "id": "ado_org",
+        "type": "promptString",
+        "description": "Azure DevOps organization name (e.g. 'Ethico')"
+      }
+    ],
+    "servers": {
+      "ado": {
+        "type": "stdio",
+        "command": "npx",
+        "args": ["-y", "@azure-devops/mcp", "${input:ado_org}"]
+      }
+    }
+  }
+  ```
 
-- After setting the PAT (and restarting Visual Studio or VS Code), you can ask Copilot Chat example prompts such as:
+  VS Code will prompt you for your Azure DevOps organization name the first time the server starts. Enter `Ethico` when prompted.
+
+- You will be prompted in the browser to sign in with your organizational account and grant permissions to the MCP. Once authenticated, you can ask Copilot Chat example prompts such as:
 
   `List recent work items assigned to me in Azure DevOps`
-
-  You may be then prompted in the browser to sign in with your organizational account and grant permissions to the MCP. Once authenticated, the Azure DevOps MCP will respond to your prompt with relevant information from Azure DevOps.
 
 Alternatively, check your VS Code User Settings by pressing `Ctrl+Shift+P` and then type "Preferences: Open User Settings (JSON)"
 Look for the github.copilot.chat.mcp section. If you don't find it, add it along with setting a Personal Access Token (PAT):
