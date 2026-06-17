@@ -78,6 +78,25 @@ Before using an MCP, search for available MCPs on your machine in Copilot Chat b
   }
   ```
 
+Example for `C:\Users\<your user>\AppData\Roaming\Code\User\mcp.json`
+
+```json
+{
+  "servers": {
+    "mcp/azure-devops": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", 
+      "@azure-devops/mcp", 
+      "Ethico"],
+      "gallery": "https://compliancelinellc.github.io/mcp-registry",
+      "version": "2.7.0"
+    }
+  },
+  "inputs": []
+}
+```
+
   VS Code will prompt you for your Azure DevOps organization name the first time the server starts. Enter `Ethico` when prompted.
 
 - You will be prompted in the browser to sign in with your organizational account and grant permissions to the MCP. Once authenticated, you can ask Copilot Chat example prompts such as:
