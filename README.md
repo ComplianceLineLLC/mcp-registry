@@ -43,6 +43,20 @@ Before using an MCP, search for available MCPs on your machine in Copilot Chat b
 ## **Angular** (Local - npx)
 - Search for available MCPs on your machine by typing `@mcp` in Copilot Chat and locate the Angular MCP.
 - Install the Angular MCP with VS Code or Visual Studio.
+
+> **⚠️ Known Issue — Manual fix required after installation**
+> The registry defines `"args": ["mcp"]` in the Angular package spec so that VS Code generates the correct startup command (`npx --registry https://registry.npmjs.org @angular/cli mcp`). However, VS Code's gallery installer currently does not honor the `args` field and omits the `mcp` subcommand, producing `npx --registry https://registry.npmjs.org @angular/cli` instead. Without the `mcp` subcommand, Angular CLI just prints help text and exits, so the server will fail to start.
+>
+> **After installing, manually update the Angular entry in your `mcp.json`** (typically `C:\Users\<your user>\AppData\Roaming\Code\User\mcp.json`) to add `"mcp"` as an argument:
+> ```json
+> "mcp/angular": {
+>   "type": "stdio",
+>   "command": "npx",
+>   "args": ["-y", "@angular/cli", "mcp"],
+>   "gallery": "https://compliancelinellc.github.io/mcp-registry",
+>   "version": "0.1.0"
+> }
+> ```
 - Once installed, open your Angular project folder in VS Code, then ask Copilot Chat prompts such as:
 
   `Generate a new Angular component called UserProfile`
