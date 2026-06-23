@@ -17,13 +17,13 @@ By centralizing our MCP configurations here, we achieve:
 | **Figma** | Remote (HTTP) | Official Figma MCP server for design file access and collaboration. |
 | **Microsoft Learn** | Remote (HTTP) | Access to Microsoft Learn content and interactive tutorials. |
 | **Playwright** | Local (stdio) | Browser automation and end-to-end testing assistance. |
+| **SonarQube** | Internal Remote (HTTPS — Azure Container Apps, VNet-restricted) | Code quality and security analysis via centrally hosted SonarQube MCP Server. |
 
 
 ## 🛠 Future Integrations (Phase 3)
 | Server Name | Type | Description |
 | :--- | :--- | :--- |
 | **Postman** | Remote (HTTP) | API testing and automation integration. |
-| **SonarQube** | Remote (HTTP) | Code quality and security analysis. |
 
 ## 🛠 Future Integrations (TBD)
 | Server Name | Type | Description |
@@ -199,10 +199,58 @@ Key points:
   The Playwright MCP will assist with test code and local browser automation.
 
 ---
+## **SonarQube** (Internal Remote — Azure Container Apps)
+
+The SonarQube MCP is centrally hosted by the organization as an Azure Container Apps instance with **internal-only ingress** (no public internet endpoint). Docker is **not** required on your machine.
+
+> **Network Requirement:** You must be connected to the **corporate VPN** to reach the internal Container Apps URL.
+
+- **Token Requirement:** You must use a SonarQube **USER token** only. Project tokens and Global Administrator tokens are not supported by SonarQube Server's MCP integration and will not work.
+- **Read-Only:** The server enforces read-only mode — you can view issues and analysis results but cannot change issue statuses or quality gates through the MCP.
+
+  In your `C:\Users\<your user>\AppData\Roaming\Code\User\mcp.json`, add the following:
+
+  ```json
+  {
+    "servers": {
+      "mcp/sonarqube": {
+        "type": "http",
+        "url": "https://<sonarqube-mcp-internal-url>/mcp",
+        "headers": {
+          "Authorization": "Bearer <your-sonarqube-user-token>"
+        }
+      }
+    }
+  }
+  ```
+
+  Replace `<sonarqube-mcp-internal-url>` with the internal Azure Container Apps URL provided by your IT/DevOps team, and `<your-sonarqube-user-token>` with your personal SonarQube USER token.
+
+- Once configured, you can ask Copilot Chat prompts such as:
+
+  `Show me the open issues for project my-project in SonarQube`
+
+  `What security hotspots are flagged in the latest analysis of my-project?`
+
+  `List code smells in the authentication module`
+
+  The SonarQube MCP will fetch analysis results from the internal SonarQube Server and surface them directly in Copilot Chat, helping you resolve issues without leaving your IDE.
+
+  For full deployment and operations details, see [docs/sonarqube-deployment.md](docs/sonarqube-deployment.md).
+
+---
 ## 📂 Repository Structure
 This repo follows the **MCP Registry Specification v0.1**. Because this is a static site, we use an `index.json` pattern:
 * `/v0.1/servers/index.json` - The master list of available tools.
 * `/v0.1/servers/mcp/[name]/versions/latest/index.json` - Specific execution logic for each tool.
+
+## ⚙️ Operations & Maintenance
+The SonarQube MCP is the first organization-managed MCP in this registry, requiring periodic updates by the IT/DevOps team.
+
+| Document | Purpose |
+| :--- | :--- |
+| [docs/sonarqube-deployment.md](docs/sonarqube-deployment.md) | Azure Container Apps deployment guide for the SonarQube MCP Server |
+| [docs/mcp-maintenance.md](docs/mcp-maintenance.md) | Monthly update and security review process for all MCPs in this registry |
 
 ## 🔐 Contribution Policy
 1. All changes must be made via a **Feature Branch**.

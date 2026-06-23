@@ -1,0 +1,56 @@
+{
+  "_meta": {
+    "io.modelcontextprotocol.registry/official": {
+      "isLatest": true,
+      "status": "active",
+      "updatedAt": "2026-06-23T00:00:00Z"
+    }
+  },
+  "server": {
+    "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+    "name": "mcp/sonarqube",
+    "title": "SonarQube",
+    "description": "Code quality and security analysis for self-hosted SonarQube Server instances.",
+    "version": "1.20.0",
+    "repository": {
+      "url": "https://github.com/SonarSource/sonarqube-mcp-server",
+      "source": "github"
+    },
+    "packages": [
+      {
+        "registryType": "oci",
+        "registryBaseUrl": "https://registry.hub.docker.com",
+        "runtimeHint": "docker",
+        "identifier": "sonarsource/sonarqube-mcp",
+        "version": "1.20.0.2929",
+        "runtimeArguments": [
+          "run",
+          "--init",
+          "--pull=always",
+          "--rm",
+          "-i",
+          "-e",
+          "SONARQUBE_TOKEN",
+          "-e",
+          "SONARQUBE_URL"
+        ],
+        "environmentVariables": [
+          {
+            "name": "SONARQUBE_TOKEN",
+            "description": "SonarQube USER token (type: USER). Project tokens and Global Administrator tokens are not supported by SonarQube Server's MCP integration and will not work.",
+            "isSecret": true,
+            "isRequired": true
+          },
+          {
+            "name": "SONARQUBE_URL",
+            "description": "Internal SonarQube server URL. Must point to a self-hosted instance (e.g. https://sonarqube.internal.example.com). SonarCloud is not permitted.",
+            "isRequired": true
+          }
+        ],
+        "transport": {
+          "type": "stdio"
+        }
+      }
+    ]
+  }
+}
