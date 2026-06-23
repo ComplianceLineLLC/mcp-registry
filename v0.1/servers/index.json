@@ -127,6 +127,7 @@
             "registryBaseUrl": "https://registry.npmjs.org",
             "runtimeHint": "npx",
             "identifier": "@angular/cli",
+            "args": ["mcp"],
             "transport": {
               "type": "stdio"
             }
