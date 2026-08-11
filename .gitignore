@@ -1,2 +1,5 @@
 .vs/
 .vscode/
+
+# Compiled ARM JSON output from Bicep (VS Code Bicep extension auto-build) — deploy from .bicep directly
+infrastructure/**/*.json
