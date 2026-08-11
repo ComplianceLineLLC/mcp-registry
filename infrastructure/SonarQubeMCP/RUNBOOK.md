@@ -128,6 +128,15 @@ az acr import --name ethicosonarqubecrdev --source docker.io/sonarsource/sonarqu
 az acr repository show --name ethicosonarqubecrdev --image sonarsource/sonarqube-mcp:1.24.0.3152 --query digest -o tsv
 ```
 
+Imported successfully. Resulting digest — **this is what task #4 pins in the Container App**, not the
+mutable tag:
+
+```text
+sha256:edf80a38956d7d8de75166c1ae173b73c8a01a9a62038232ce0b75ead7dc450c
+```
+
+Full image reference: `ethicosonarqubecrdev.azurecr.io/sonarsource/sonarqube-mcp@sha256:edf80a38956d7d8de75166c1ae173b73c8a01a9a62038232ce0b75ead7dc450c`
+
 **Follow-up required:** this version bump ripples into places still pinned to `1.20.0.2929` —
 `docs/mcp-maintenance.md`'s inventory table, `docs/sonarqube-deployment.md`'s example commands and
 `/info` response, `v0.1/servers/index.json` and `v0.1/servers/mcp/sonarqube/versions/latest/index.json`,
