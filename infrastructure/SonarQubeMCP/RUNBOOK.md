@@ -90,15 +90,16 @@ Confirmed: `20.0.3.160/27`, delegated to `Microsoft.App/environments`, joined to
 
 ## Step 2 — ACR, managed identity, and AcrPull role assignment
 
-**Status: pending.**
+**Status: done — 2026-08-11.** Ran successfully; `provisioningState: "Succeeded"` with all four expected
+resources present (the resource group, the ACR, the managed identity, and its `AcrPull` role assignment).
 
 **PowerShell / bash (identical — single line, no continuation needed):**
 
-```
+```shell
 az deployment sub create --location eastus --template-file main.bicep
 ```
 
-Creates (idempotently, including the resource group from Step 0):
+Created (idempotently, including the resource group from Step 0):
 
 - `rg-ethico-sonarqube-mcp-dev`
 - `ethicosonarqubecrdev` — the Azure Container Registry ([modules/acr.bicep](modules/acr.bicep))
@@ -107,10 +108,32 @@ Creates (idempotently, including the resource group from Step 0):
 
 ## Step 3 — Image promotion
 
-**Status: pending.**
+**Status: done — 2026-08-12.** The originally-planned pin, `sonarsource/sonarqube-mcp:1.20.0.2929`, was
+scanned first and came back with **4 unaddressed HIGH findings** (`c-ares` CVE-2026-33630; `nodejs`
+CVE-2026-56846, CVE-2026-56848, CVE-2026-58043 — all `Status: fixed` upstream, meaning newer package
+builds already resolve them). Rather than accept that risk or wait on a rebuild, checked the
+[GitHub Releases page](https://github.com/SonarSource/sonarqube-mcp-server/releases) for newer tags:
+`1.20.0.2929` (our original pin) has four releases ahead of it — `1.21.0.2975`, `1.22.0.3040`,
+`1.23.0.3101`, and the latest, **`1.24.0.3152`**. Trivy-scanned `1.24.0.3152` and it came back **clean**
+(0 findings) — its base Alpine/Node layers had already moved past the vulnerable versions. **Decision:
+promote `1.24.0.3152` instead of the originally-planned `1.20.0.2929`.**
 
-Pull `sonarsource/sonarqube-mcp:1.20.0.2929` from Docker Hub, Trivy-scan it, and (if clean of unaddressed
-High/Critical findings) push it into `ethicosonarqubecrdev`, pinned by digest.
+**PowerShell / bash (identical):**
+
+```shell
+docker run --rm aquasec/trivy image --severity HIGH,CRITICAL sonarsource/sonarqube-mcp:1.24.0.3152
+
+az acr import --name ethicosonarqubecrdev --source docker.io/sonarsource/sonarqube-mcp:1.24.0.3152 --image sonarsource/sonarqube-mcp:1.24.0.3152
+
+az acr repository show --name ethicosonarqubecrdev --image sonarsource/sonarqube-mcp:1.24.0.3152 --query digest -o tsv
+```
+
+**Follow-up required:** this version bump ripples into places still pinned to `1.20.0.2929` —
+`docs/mcp-maintenance.md`'s inventory table, `docs/sonarqube-deployment.md`'s example commands and
+`/info` response, `v0.1/servers/index.json` and `v0.1/servers/mcp/sonarqube/versions/latest/index.json`,
+and `plan.md`'s verification step #2. Task #8 ("Registry & doc updates") already covers touching most of
+these files for the FQDN/execution-model fix — worth doing the version bump in the same pass rather than
+as a second edit to the same files.
 
 ## Step 4 — Container Apps Environment, Container App, and Log Analytics (task #4)
 
