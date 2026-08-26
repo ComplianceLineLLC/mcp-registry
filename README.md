@@ -208,35 +208,105 @@ The SonarQube MCP is centrally hosted by the organization as an Azure Container 
 - **Token Requirement:** You must use a SonarQube **USER token** only. Project tokens and Global Administrator tokens are not supported by SonarQube Server's MCP integration and will not work.
 - **Read-Only:** The server enforces read-only mode — you can view issues and analysis results but cannot change issue statuses or quality gates through the MCP.
 
-  In your `C:\Users\<your user>\AppData\Roaming\Code\User\mcp.json`, add the following:
+### Step 1: Generate your SonarQube USER token
 
-  ```json
-  {
-    "servers": {
-      "mcp/sonarqube": {
-        "type": "http",
-        "url": "https://ca-sonarqube-mcp-dev.internal.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/mcp",
-        "headers": {
-          "Authorization": "Bearer <your-sonarqube-user-token>"
-        }
+1. Sign in to `https://sqdev.mycompliancemanagement.com`
+2. Go to **My Account → Security → Generate Tokens**
+3. For **Type**, choose **User** — not Project or Global Administrator; those are rejected by the MCP
+4. Name it `mcp-<your-username>` (e.g. `mcp-jsmith`) so it's distinguishable from other tokens like CI/CD scanner tokens in your account
+5. Copy the generated token now — it won't be shown again
+
+> **This token is personal.** Don't share it or commit it anywhere. It ties every request the MCP makes back to your own SonarQube account and audit log.
+
+### Step 2: Connect from your MCP client
+
+<details>
+<summary><strong>VS Code (GitHub Copilot)</strong></summary>
+
+1. Type `@mcp` in Copilot Chat and locate **SonarQube** in the Organization Approved list.
+2. Install it via the editor prompt — no local package to install, since this is a remote server (same as Figma).
+3. Add your token. VS Code supports securely-prompted input variables so your token isn't stored in plaintext in `mcp.json`. In the file `@mcp` installed into (check `.vscode/mcp.json` in your workspace first, otherwise `C:\Users\<your user>\AppData\Roaming\Code\User\mcp.json`), confirm or add:
+
+```json
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "sonarqube-token",
+      "description": "SonarQube USER token (mcp-<username>)",
+      "password": true
+    }
+  ],
+  "servers": {
+    "mcp/sonarqube": {
+      "type": "http",
+      "url": "https://ca-sonarqube-mcp-dev.internal.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/mcp",
+      "headers": {
+        "Authorization": "Bearer ${input:sonarqube-token}"
       }
     }
   }
-  ```
+}
+```
 
-  Replace `<your-sonarqube-user-token>` with your personal SonarQube USER token.
+VS Code prompts you for the token the first time the server starts, and stores it securely rather than writing it into this file.
 
-- Once configured, you can ask Copilot Chat prompts such as:
+> **Not yet field-verified against our registry** — this is VS Code's documented mechanism for secret headers, but nobody's confirmed it works cleanly end-to-end through installation via `@mcp` from our specific gallery yet. If it doesn't behave as expected, fall back to a plain hardcoded header instead (known to work, just stores the token in plaintext in the file):
+>
+> ```json
+> "headers": { "Authorization": "Bearer <your-sonarqube-user-token>" }
+> ```
+>
+> **If you ever uninstall and reinstall this MCP** (e.g. while troubleshooting), you'll likely need to re-enter your token — that's expected, not a sign something's broken.
 
-  `Show me the open issues for project my-project in SonarQube`
+</details>
 
-  `What security hotspots are flagged in the latest analysis of my-project?`
+<details>
+<summary><strong>Claude Code</strong></summary>
 
-  `List code smells in the authentication module`
+Run:
 
-  The SonarQube MCP will fetch analysis results from the internal SonarQube Server and surface them directly in Copilot Chat, helping you resolve issues without leaving your IDE.
+```shell
+claude mcp add sonarqube --transport http https://ca-sonarqube-mcp-dev.internal.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/mcp --header "Authorization: Bearer <your-sonarqube-user-token>"
+```
 
-  For full deployment and operations details, see [docs/sonarqube-deployment.md](docs/sonarqube-deployment.md).
+Replace `<your-sonarqube-user-token>` with the token from Step 1. This adds the server to your user-level Claude Code config.
+
+If you'd rather edit the config file directly, note that Claude Code's format differs from VS Code's — the top-level key is `mcpServers`, not `servers`, and the server name has no `mcp/` prefix:
+
+```json
+{
+  "mcpServers": {
+    "sonarqube": {
+      "type": "http",
+      "url": "https://ca-sonarqube-mcp-dev.internal.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/mcp",
+      "headers": {
+        "Authorization": "Bearer <your-sonarqube-user-token>"
+      }
+    }
+  }
+}
+```
+
+</details>
+
+### Using it
+
+Once configured, you can ask prompts such as:
+
+`Show me the open issues for project my-project in SonarQube`
+
+`What security hotspots are flagged in the latest analysis of my-project?`
+
+`List code smells in the authentication module`
+
+The SonarQube MCP will fetch analysis results from the internal SonarQube Server and surface them directly in your chat, helping you resolve issues without leaving your editor.
+
+### If your token expires
+
+An expired or invalid token shows up as a `401` error from the MCP. Generate a replacement using the same steps as Step 1, then update it in your `mcp.json` (VS Code) or re-run `claude mcp add` (Claude Code) with the new value.
+
+For full deployment and operations details, see [docs/sonarqube-deployment.md](docs/sonarqube-deployment.md).
 
 ---
 ## 📂 Repository Structure
