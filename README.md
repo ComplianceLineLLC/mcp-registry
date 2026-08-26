@@ -215,7 +215,7 @@ The SonarQube MCP is centrally hosted by the organization as an Azure Container 
     "servers": {
       "mcp/sonarqube": {
         "type": "http",
-        "url": "https://<sonarqube-mcp-internal-url>/mcp",
+        "url": "https://ca-sonarqube-mcp-dev.internal.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/mcp",
         "headers": {
           "Authorization": "Bearer <your-sonarqube-user-token>"
         }
@@ -224,7 +224,7 @@ The SonarQube MCP is centrally hosted by the organization as an Azure Container 
   }
   ```
 
-  Replace `<sonarqube-mcp-internal-url>` with the internal Azure Container Apps URL provided by your IT/DevOps team, and `<your-sonarqube-user-token>` with your personal SonarQube USER token.
+  Replace `<your-sonarqube-user-token>` with your personal SonarQube USER token.
 
 - Once configured, you can ask Copilot Chat prompts such as:
 

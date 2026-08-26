@@ -48,7 +48,7 @@ az containerapp create \
   --name sonarqube-mcp \
   --resource-group <rg-name> \
   --environment sonarqube-mcp-env \
-  --image sonarsource/sonarqube-mcp:1.20.0.2929 \
+  --image sonarsource/sonarqube-mcp:1.24.0.3152 \
   --target-port 8080 \
   --ingress internal \
   --min-replicas 1 \
@@ -87,10 +87,10 @@ From within the VNet (e.g., via VPN or a bastion host), confirm the server is he
 
 ```bash
 # Liveness check — should return HTTP 200 with an empty body
-curl https://<container-app-internal-url>/health
+curl https://ca-sonarqube-mcp-dev.internal.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/health
 
-# Version check — should return {"version":"1.20.0"}
-curl https://<container-app-internal-url>/info
+# Version check — should return {"version":"1.24.0"}
+curl https://ca-sonarqube-mcp-dev.internal.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/info
 ```
 
 ## Developer Configuration
@@ -102,7 +102,7 @@ Developers do **not** need Docker installed. Add the following to `C:\Users\<you
   "servers": {
     "mcp/sonarqube": {
       "type": "http",
-      "url": "https://<container-app-internal-url>/mcp",
+      "url": "https://ca-sonarqube-mcp-dev.internal.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/mcp",
       "headers": {
         "Authorization": "Bearer <your-sonarqube-user-token>"
       }
@@ -142,7 +142,11 @@ If an update causes issues, revert immediately:
 az containerapp update \
   --name sonarqube-mcp \
   --resource-group <rg-name> \
-  --image sonarsource/sonarqube-mcp:1.20.0.2929
+  --image sonarsource/sonarqube-mcp:1.24.0.3152
 ```
 
-Then open a PR to revert the registry files to the previous version.
+Then open a PR to revert the registry files to the previous version. (`1.24.0.3152` is both the current
+and the only version ever actually deployed — the originally-planned `1.20.0.2929` was scanned but never
+promoted, see [infrastructure/SonarQubeMCP/RUNBOOK.md](../infrastructure/SonarQubeMCP/RUNBOOK.md#step-3--image-promotion).
+Update this rollback target whenever a future version is promoted, to whatever was running immediately
+before it.)

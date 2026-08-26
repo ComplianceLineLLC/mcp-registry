@@ -20,7 +20,7 @@ This document defines how the IT/DevOps team reviews, updates, and secures all M
 | Angular | Developer-local | `0.1.0` | `@angular/cli` (npm) | https://www.npmjs.com/package/@angular/cli |
 | Microsoft Learn | Vendor-managed | N/A (remote) | `https://learn.microsoft.com/api/mcp` | https://github.com/MicrosoftDocs/mcp |
 | Figma | Vendor-managed | N/A (remote) | `https://mcp.figma.com/mcp` | https://www.figma.com/developers/mcp |
-| SonarQube | Org-managed | `1.20.0.2929` | `sonarsource/sonarqube-mcp` (Docker Hub) | https://github.com/SonarSource/sonarqube-mcp-server/releases |
+| SonarQube | Org-managed | `1.24.0.3152` | `ethicosonarqubecrdev.azurecr.io/sonarsource/sonarqube-mcp` (ACR, promoted from Docker Hub — see [infrastructure/SonarQubeMCP/RUNBOOK.md](../infrastructure/SonarQubeMCP/RUNBOOK.md)) | https://github.com/SonarSource/sonarqube-mcp-server/releases |
 
 ## Monthly Review Checklist
 
@@ -73,12 +73,21 @@ Subscribe to GitHub Security Advisories for each package:
 ## Standard Update Process
 
 1. Open a feature branch: `git checkout -b update/<mcp-name>-<version>`
-2. Update the version in `v0.1/servers/index.json`
-3. Update the version in `v0.1/servers/mcp/<name>/versions/latest/index.json`
-4. Update any version references in `README.md`
-5. For org-managed MCPs (SonarQube), redeploy per [sonarqube-deployment.md](sonarqube-deployment.md)
-6. Verify all endpoints or run a quick smoke test
-7. Open a PR, request review from a second team member, merge
+2. **For org-managed MCPs (SonarQube)** — vet and promote the new image before touching any registry files:
+   - Trivy-scan the candidate tag directly against Docker Hub: `docker run --rm aquasec/trivy image --severity HIGH,CRITICAL sonarsource/sonarqube-mcp:<new-version>`
+   - If it comes back with unaddressed High/Critical findings, check GitHub Releases for a newer tag before accepting the risk — see [infrastructure/SonarQubeMCP/RUNBOOK.md](../infrastructure/SonarQubeMCP/RUNBOOK.md#step-3--image-promotion) for how this played out on the initial promotion
+   - If clean, promote into ACR pinned by digest: `az acr import --name ethicosonarqubecrdev --source docker.io/sonarsource/sonarqube-mcp:<new-version> --image sonarsource/sonarqube-mcp:<new-version>`, then read back the digest with `az acr repository show --name ethicosonarqubecrdev --image sonarsource/sonarqube-mcp:<new-version> --query digest -o tsv`
+3. Update the version in `v0.1/servers/index.json`
+4. Update the version in `v0.1/servers/mcp/<name>/versions/latest/index.json`
+5. Update any version references in `README.md`
+6. For org-managed MCPs (SonarQube): update `imageDigest` in [infrastructure/SonarQubeMCP/main.bicep](../infrastructure/SonarQubeMCP/main.bicep) to the new digest and redeploy (`az deployment sub create --location eastus --template-file main.bicep`); update the version/URL references in [sonarqube-deployment.md](sonarqube-deployment.md) too
+7. Verify all endpoints or run a quick smoke test
+8. Open a PR, request review from a second team member, merge
+
+Steps 2 and 6 are manual today. Once the Azure DevOps Pipeline at `Pipelines/SonarQubeMCP/` (plan.md
+task #7, not yet built) lands, it automates this scan → promote → redeploy → verify sequence — this
+section should be updated to reference the pipeline once that happens, rather than describing manual
+steps that are no longer how updates actually happen.
 
 ## Emergency Security Update Process
 
