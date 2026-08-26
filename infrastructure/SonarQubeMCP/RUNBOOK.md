@@ -146,9 +146,23 @@ as a second edit to the same files.
 
 ## Step 4 — Container Apps Environment, Container App, and Log Analytics (task #4)
 
-**Status: pending.** Will extend `main.bicep` with the Container Apps Environment (wired to the subnet
-from Step 1), the Container App itself (attaching the identity from Step 2), and a Log Analytics workspace
-+ diagnostic settings.
+**Status: authored 2026-08-26, not yet deployed.** `main.bicep` extended with four new modules:
+
+- [modules/log-analytics.bicep](modules/log-analytics.bicep) — `law-sonarqube-mcp-dev`, `PerGB2018`, 30-day retention
+- [modules/container-apps-environment.bicep](modules/container-apps-environment.bicep) — `internal: true`, wired to the `SonarQubeMCP-Dev-Subnet` from Step 1 (cross-resource-group reference — the subnet lives in `RG-PolicyManagement`, referenced by resource ID string only, no `existing` lookup needed), Consumption workload profile (matches the `/27` subnet sizing — Dedicated profiles need the larger `/23` Microsoft recommends), logs routed to the workspace above
+- [modules/container-app.bicep](modules/container-app.bicep) — pulls the digest-pinned image from ACR (`sha256:edf80a38…`, task #3) using the `ethico-sonarqube-mcp-mi-dev` identity for registry auth; internal ingress on port 8080; env vars per [docs/sonarqube-deployment.md](../../docs/sonarqube-deployment.md); min/max replicas 1/2
+- [modules/diagnostic-settings.bicep](modules/diagnostic-settings.bicep) — explicit console/system log + metric streaming from the Container App to the workspace, separate from the environment's own log plumbing
+
+Compiles clean (`az bicep build`, no warnings).
+
+**PowerShell / bash (identical — single line):**
+
+```shell
+az deployment sub create --location eastus --template-file main.bicep
+```
+
+Idempotent with Steps 2–3 — re-running this also re-confirms the resource group, ACR, and identity are
+unchanged, then adds the four new resources.
 
 ## Step 5 — Monitoring (task #5) and pipeline (task #7)
 

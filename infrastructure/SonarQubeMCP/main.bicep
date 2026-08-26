@@ -20,6 +20,30 @@ param acrSkuName string = 'Basic'
 @description('Name of the user-assigned managed identity for the SonarQube MCP Container App')
 param identityName string = 'ethico-sonarqube-mcp-mi-dev'
 
+@description('Name of the Log Analytics workspace')
+param logAnalyticsWorkspaceName string = 'law-sonarqube-mcp-dev'
+
+@description('Resource ID of the delegated subnet created in task #2 (lives in RG-PolicyManagement, not this resource group)')
+param subnetId string = '/subscriptions/326c5c7f-73c8-4e8b-b146-d643c06ced0d/resourceGroups/RG-PolicyManagement/providers/Microsoft.Network/virtualNetworks/clDEVvNET/subnets/SonarQubeMCP-Dev-Subnet'
+
+@description('Name of the Container Apps Environment')
+param containerAppsEnvironmentName string = 'cae-sonarqube-mcp-dev'
+
+@description('Name of the Container App')
+param containerAppName string = 'ca-sonarqube-mcp-dev'
+
+@description('Digest-pinned SonarQube MCP image reference, promoted in task #3')
+param imageDigest string = 'sha256:edf80a38956d7d8de75166c1ae173b73c8a01a9a62038232ce0b75ead7dc450c'
+
+@description('SonarQube Server URL')
+param sonarQubeUrl string = 'https://sqdev.mycompliancemanagement.com'
+
+@description('Minimum Container App replica count')
+param minReplicas int = 1
+
+@description('Maximum Container App replica count')
+param maxReplicas int = 2
+
 resource rg 'Microsoft.Resources/resourceGroups@2023-07-01' = {
   name: resourceGroupName
   location: location
@@ -53,7 +77,57 @@ module acrRoleAssignment 'modules/acr-role-assignment.bicep' = {
   }
 }
 
+module logAnalytics 'modules/log-analytics.bicep' = {
+  name: 'deploy-log-analytics'
+  scope: rg
+  params: {
+    workspaceName: logAnalyticsWorkspaceName
+    location: location
+  }
+}
+
+module containerAppsEnvironment 'modules/container-apps-environment.bicep' = {
+  name: 'deploy-container-apps-environment'
+  scope: rg
+  params: {
+    environmentName: containerAppsEnvironmentName
+    location: location
+    subnetId: subnetId
+    logAnalyticsWorkspaceName: logAnalytics.outputs.workspaceName
+  }
+}
+
+module containerApp 'modules/container-app.bicep' = {
+  name: 'deploy-container-app'
+  scope: rg
+  params: {
+    containerAppName: containerAppName
+    location: location
+    environmentId: containerAppsEnvironment.outputs.environmentId
+    acrLoginServer: acr.outputs.acrLoginServer
+    imageDigest: imageDigest
+    managedIdentityId: managedIdentity.outputs.identityId
+    sonarQubeUrl: sonarQubeUrl
+    minReplicas: minReplicas
+    maxReplicas: maxReplicas
+  }
+}
+
+module diagnosticSettings 'modules/diagnostic-settings.bicep' = {
+  name: 'deploy-diagnostic-settings'
+  scope: rg
+  params: {
+    containerAppName: containerAppName
+    logAnalyticsWorkspaceId: logAnalytics.outputs.workspaceId
+  }
+  dependsOn: [
+    containerApp
+  ]
+}
+
 output acrLoginServer string = acr.outputs.acrLoginServer
 output acrId string = acr.outputs.acrId
 output managedIdentityId string = managedIdentity.outputs.identityId
 output managedIdentityClientId string = managedIdentity.outputs.clientId
+output containerAppsEnvironmentId string = containerAppsEnvironment.outputs.environmentId
+output containerAppFqdn string = containerApp.outputs.containerAppFqdn
