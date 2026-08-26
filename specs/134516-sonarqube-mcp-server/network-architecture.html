@@ -488,7 +488,7 @@
           </div>
         </div>
 
-        <div class="connector"><div class="line"></div><span class="arrow-label">outbound HTTPS 443 — Docker Hub/ACR confirmed; SonarQube Server not yet tested</span></div>
+        <div class="connector"><div class="line"></div><span class="arrow-label">outbound HTTPS 443 — all three confirmed working</span></div>
 
         <div class="external-row">
           <div class="ext-node">
@@ -501,10 +501,10 @@
             <div class="sub">ethicosonarqubecrdev.azurecr.io — pulls happen on every deploy</div>
             <div class="unverified-flag" style="color: var(--accent-ink);">✓ confirmed — Container App pulls successfully</div>
           </div>
-          <div class="ext-node unverified">
+          <div class="ext-node">
             <div class="mono">sqdev.mycompliancemanagement.com</div>
             <div class="sub">SonarQube Server — every MCP request</div>
-            <div class="unverified-flag">⚑ not yet tested — blocked on the DNS gap below</div>
+            <div class="unverified-flag" style="color: var(--accent-ink);">✓ confirmed — wget --spider from inside the running container succeeded</div>
           </div>
         </div>
 
@@ -543,7 +543,7 @@
   <section>
     <h2>Gilbert's original questions — resolved</h2>
     <div class="questions">
-      <div class="q-card resolved"><b>✓ Firewall rules —</b> Approved and confirmed working: the Container App successfully pulls from both Docker Hub (via ACR import) and its own ACR through the NVA at <span class="mono">10.2.3.4</span>. SonarQube Server reachability (<span class="mono">sqdev.mycompliancemanagement.com</span>) is the one leg not yet functionally tested — see the new DNS gap below, which is currently blocking that test.</div>
+      <div class="q-card resolved"><b>✓ Firewall rules —</b> Approved and confirmed working, all three legs: the Container App successfully pulls from both Docker Hub (via ACR import) and its own ACR through the NVA at <span class="mono">10.2.3.4</span>, and a <span class="mono">wget --spider</span> run from inside the running container confirmed outbound reachability to <span class="mono">sqdev.mycompliancemanagement.com</span> too (self-verified via the Azure Portal console — no need to re-check this one).</div>
       <div class="q-card resolved"><b>✓ Inconsistent pattern —</b> Resolved in favor of the majority (NVA-routed) pattern — Gilbert approved <span class="mono">SonarQubeMCP-Dev-Subnet</span> joining <span class="mono">NSG-DEVSubscription</span> + <span class="mono">DEV-RouteTable</span>, matching five of the six sibling subnets.</div>
       <div class="q-card resolved"><b>✓ Proposed subnet —</b> Approved and deployed: <span class="mono">20.0.3.160/27</span>, delegated to <span class="mono">Microsoft.App/environments</span>, exactly as proposed.</div>
     </div>
@@ -556,7 +556,7 @@
       <br><br>
       Planned fix: create a Private DNS Zone named <span class="mono">thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io</span> (matching the environment's own default domain) in our own resource group, with an <span class="mono">A</span> record <span class="mono">*.internal</span> → <span class="mono">20.0.3.165</span> (the environment's static IP), linked to <span class="mono">clDEVvNET</span>.
       <br><br>
-      <b>Open question:</b> is a VNet link to <span class="mono">clDEVvNET</span> alone sufficient for a VPN-connected developer laptop to resolve this record, given the VPN gateway itself lives in the peered <span class="mono">clUATvNET</span> (different subscription)? There's no existing precedent in this org for a developer workstation resolving an Azure private DNS record over VPN — the three private DNS zones that do exist today are for VNet-native app-to-database resolution, not developer-machine DNS. Plan is to create the zone/record/link first (unambiguously needed regardless of the VPN question) and re-test; if resolution still fails from VPN after that, this is the point to loop you in on VPN DNS forwarding specifically.</div>
+      <b>Open question:</b> is a VNet link to <span class="mono">clDEVvNET</span> alone sufficient for a VPN-connected developer laptop to resolve this record, given the VPN gateway itself lives in the peered <span class="mono">clUATvNET</span> (different subscription)? There's no existing precedent in this org for a developer workstation resolving an Azure private DNS record over VPN — the three private DNS zones that do exist today are for VNet-native app-to-database resolution, not developer-machine DNS. Plan is to create the zone/record/link first (unambiguously needed regardless of the VPN question) and re-test; if resolution still fails from VPN after that, this is the point to loop you in on VPN DNS forwarding specifically. Note this is now purely a DNS/ingress-side question — egress (the firewall rules question above) is fully proven end-to-end, so nothing about this is blocked on or related to the NVA.</div>
     </div>
   </section>
 
