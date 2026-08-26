@@ -146,14 +146,35 @@ as a second edit to the same files.
 
 ## Step 4 — Container Apps Environment, Container App, and Log Analytics (task #4)
 
-**Status: authored 2026-08-26, not yet deployed.** `main.bicep` extended with four new modules:
+**Status: first attempt 2026-08-26 partially failed, fix applied, redeploy pending.** `main.bicep`
+extended with four new modules:
 
 - [modules/log-analytics.bicep](modules/log-analytics.bicep) — `law-sonarqube-mcp-dev`, `PerGB2018`, 30-day retention
-- [modules/container-apps-environment.bicep](modules/container-apps-environment.bicep) — `internal: true`, wired to the `SonarQubeMCP-Dev-Subnet` from Step 1 (cross-resource-group reference — the subnet lives in `RG-PolicyManagement`, referenced by resource ID string only, no `existing` lookup needed), Consumption workload profile (matches the `/27` subnet sizing — Dedicated profiles need the larger `/23` Microsoft recommends), logs routed to the workspace above
+- [modules/container-apps-environment.bicep](modules/container-apps-environment.bicep) — `internal: true`, wired to the `SonarQubeMCP-Dev-Subnet` from Step 1 (cross-resource-group reference — the subnet lives in `RG-PolicyManagement`, referenced by resource ID string only, no `existing` lookup needed), Consumption workload profile (matches the `/27` subnet sizing — Dedicated profiles need the larger `/23` Microsoft recommends), logs routed to the workspace above via `appLogsConfiguration`
 - [modules/container-app.bicep](modules/container-app.bicep) — pulls the digest-pinned image from ACR (`sha256:edf80a38…`, task #3) using the `ethico-sonarqube-mcp-mi-dev` identity for registry auth; internal ingress on port 8080; env vars per [docs/sonarqube-deployment.md](../../docs/sonarqube-deployment.md); min/max replicas 1/2
-- [modules/diagnostic-settings.bicep](modules/diagnostic-settings.bicep) — explicit console/system log + metric streaming from the Container App to the workspace, separate from the environment's own log plumbing
+- [modules/diagnostic-settings.bicep](modules/diagnostic-settings.bicep) — `AllMetrics` only, scoped to the Container App
 
-Compiles clean (`az bicep build`, no warnings).
+**First deployment attempt:** the resource group, ACR, identity, role assignment, Log Analytics
+workspace, Container Apps Environment, and Container App **all deployed successfully** —
+`ca-sonarqube-mcp-dev` came up with `provisioningState: "Succeeded"` and FQDN
+`ca-sonarqube-mcp-dev.internal.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io`. Only the last
+module, `deploy-diagnostic-settings`, failed:
+
+```text
+BadRequest: Category 'ContainerAppConsoleLogs' is not supported.
+```
+
+**Root cause:** `diagnostic-settings.bicep` originally requested `ContainerAppConsoleLogs` and
+`ContainerAppSystemLogs` scoped to the Container App — those log categories only exist on
+`Microsoft.App/managedEnvironments` (the CAE), not `Microsoft.App/containerApps` (confirmed via
+`az monitor diagnostic-settings categories list --resource-type <type> --resource <name> -g <rg>`
+against both resource types). The Container App resource only exposes `AllMetrics` through diagnostic
+settings. Rather than move the log categories onto the environment, dropped them entirely — the
+environment's `appLogsConfiguration` (already deployed, already working) covers console/system logs via
+a different pipe to the same workspace, so adding them again via diagnostic settings would just
+double-ingest the same data. Fixed module now requests `AllMetrics` only.
+
+Compiles clean (`az bicep build`, no warnings) after the fix.
 
 **PowerShell / bash (identical — single line):**
 
@@ -161,8 +182,8 @@ Compiles clean (`az bicep build`, no warnings).
 az deployment sub create --location eastus --template-file main.bicep
 ```
 
-Idempotent with Steps 2–3 — re-running this also re-confirms the resource group, ACR, and identity are
-unchanged, then adds the four new resources.
+Idempotent with Steps 2–3 and the first attempt's successful resources — re-running this confirms
+everything already deployed is unchanged, then retries only `deploy-diagnostic-settings` with the fix.
 
 ## Step 5 — Monitoring (task #5) and pipeline (task #7)
 
