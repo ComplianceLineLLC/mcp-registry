@@ -146,7 +146,8 @@ as a second edit to the same files.
 
 ## Step 4 — Container Apps Environment, Container App, and Log Analytics (task #4)
 
-**Status: first attempt 2026-08-26 partially failed, fix applied, redeploy pending.** `main.bicep`
+**Status: done — 2026-08-26.** First attempt partially failed (see below), fix applied, redeploy
+succeeded — `provisioningState: "Succeeded"`, all 8 resources present in `outputResources`. `main.bicep`
 extended with four new modules:
 
 - [modules/log-analytics.bicep](modules/log-analytics.bicep) — `law-sonarqube-mcp-dev`, `PerGB2018`, 30-day retention
@@ -184,6 +185,18 @@ az deployment sub create --location eastus --template-file main.bicep
 
 Idempotent with Steps 2–3 and the first attempt's successful resources — re-running this confirms
 everything already deployed is unchanged, then retries only `deploy-diagnostic-settings` with the fix.
+
+**Redeploy result:** succeeded in 56.6s. Final outputs:
+
+```text
+containerAppFqdn:            ca-sonarqube-mcp-dev.internal.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io
+containerAppsEnvironmentId:  /subscriptions/.../resourceGroups/rg-ethico-sonarqube-mcp-dev/providers/Microsoft.App/managedEnvironments/cae-sonarqube-mcp-dev
+acrLoginServer:               ethicosonarqubecrdev.azurecr.io
+managedIdentityId:            /subscriptions/.../resourceGroups/rg-ethico-sonarqube-mcp-dev/providers/Microsoft.ManagedIdentity/userAssignedIdentities/ethico-sonarqube-mcp-mi-dev
+```
+
+This FQDN is what task #8 substitutes for the `<container-app-fqdn>` placeholders in the registry JSON
+and docs.
 
 ## Step 5 — Monitoring (task #5) and pipeline (task #7)
 
