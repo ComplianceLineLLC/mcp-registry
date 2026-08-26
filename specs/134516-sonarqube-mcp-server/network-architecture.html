@@ -352,6 +352,13 @@
   .egress-tag.nva { background: var(--nva-fill); border: 1px solid var(--nva-line); }
   .egress-tag.direct { background: var(--direct-fill); border: 1px solid var(--direct-line); }
   .egress-tag.proposed { background: var(--accent-bg); border: 1px dashed var(--accent); color: var(--accent-ink); }
+  .egress-tag.deployed { background: var(--accent); border: 1px solid var(--accent); color: var(--surface); }
+
+  .new-badge.deployed-badge {
+    background: var(--accent);
+    color: var(--surface);
+    border-color: var(--accent);
+  }
 
   /* Open questions */
   .questions {
@@ -368,6 +375,12 @@
     font-size: 0.86rem;
   }
   .q-card b { color: var(--warn); }
+  .q-card.resolved {
+    background: var(--accent-bg);
+    border: 1px solid var(--accent);
+    border-left: 3px solid var(--accent);
+  }
+  .q-card.resolved b { color: var(--accent-ink); }
 
   footer {
     margin-top: 2.5rem;
@@ -397,14 +410,14 @@
 
 <div class="page">
   <header class="top">
-    <span class="status-pill">Draft — no changes made — for network review</span>
+    <span class="status-pill">Deployed — one new open question for Gilbert (DNS)</span>
     <h1>SonarQube MCP Server — Network Architecture</h1>
-    <p class="subhead">Proposed hosting for the SonarQube MCP Server (work item #134516). Nothing below has been created yet — sharing for Gilbert's review of the networking approach before any resource is provisioned.</p>
+    <p class="subhead">Status update on work item #134516's network path. The subnet, Container Apps Environment, and Container App are live — Gilbert's original questions below are resolved. This update covers what changed since then, plus one new gap found post-deployment: internal DNS resolution for the Container App's FQDN, which turned out to need manual setup rather than the auto-provisioning originally assumed.</p>
     <div class="meta-row">
       <span><b>Subscription</b> <span class="mono">Azure DevTest subscription 1</span></span>
       <span><b>Sub ID</b> <span class="mono">326c5c7f-73c8-4e8b-b146-d643c06ced0d</span></span>
       <span><b>VNet</b> <span class="mono">clDEVvNET</span> (RG-PolicyManagement, eastus)</span>
-      <span><b>As of</b> 2026-08-03</span>
+      <span><b>As of</b> 2026-08-26</span>
     </div>
   </header>
 
@@ -437,7 +450,7 @@
               <div class="subnet-chip"><span class="name">WFE-DEV2-Subnet</span><span class="cidr mono">20.0.3.224/27</span></div>
               <div class="subnet-chip"><span class="name">RA-DEV2-Subnet</span><span class="cidr mono">20.0.3.192/27</span></div>
               <div class="subnet-chip new">
-                <span class="name">SonarQubeMCP-Dev-Subnet<span class="new-badge">Proposed</span></span>
+                <span class="name">SonarQubeMCP-Dev-Subnet<span class="new-badge deployed-badge">Deployed</span></span>
                 <span class="cidr mono">20.0.3.160/27</span>
               </div>
             </div>
@@ -457,34 +470,41 @@
 
           <div class="connector"><div class="line"></div></div>
 
-          <div class="node unverified" style="max-width: 460px; margin: 0 auto;">
-            <div class="label">Container Apps Environment <span class="new-badge">Proposed</span></div>
-            <div class="sub">internal: true · first internal-only CAE in this VNet · Private DNS Zone auto-provisioned + linked to clDEVvNET on creation (nothing to verify yet)</div>
+          <div class="node" style="max-width: 460px; margin: 0 auto;">
+            <div class="label">Container Apps Environment <span class="new-badge deployed-badge">Deployed</span></div>
+            <div class="sub">internal: true · cae-sonarqube-mcp-dev · static IP 20.0.3.165 · first internal-only CAE in this VNet</div>
           </div>
           <div class="connector"><div class="line"></div></div>
-          <div class="node unverified" style="max-width: 460px; margin: 0 auto;">
-            <div class="label">Container App: sonarqube-mcp</div>
+          <div class="node" style="max-width: 460px; margin: 0 auto;">
+            <div class="label">Container App: ca-sonarqube-mcp-dev <span class="new-badge deployed-badge">Deployed</span></div>
             <div class="sub">Ingress: internal only · port 8080 · reads ACR image by digest</div>
+          </div>
+          <div class="connector"><div class="line"></div><span class="arrow-label">FQDN resolution — new gap, see below</span></div>
+          <div class="node unverified" style="max-width: 460px; margin: 0 auto;">
+            <div class="label">Private DNS Zone <span class="new-badge">Proposed</span></div>
+            <div class="sub mono">thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io</div>
+            <div class="sub">A record <span class="mono">*.internal</span> → <span class="mono">20.0.3.165</span> · linked to clDEVvNET</div>
+            <div class="unverified-flag">⚑ sufficient for VPN clients? confirm w/ Gilbert</div>
           </div>
         </div>
 
-        <div class="connector"><div class="line"></div><span class="arrow-label">outbound HTTPS 443 — path through the NVA above is unverified</span></div>
+        <div class="connector"><div class="line"></div><span class="arrow-label">outbound HTTPS 443 — Docker Hub/ACR confirmed; SonarQube Server not yet tested</span></div>
 
         <div class="external-row">
-          <div class="ext-node unverified">
+          <div class="ext-node">
             <div>Docker Hub</div>
             <div class="sub">sonarsource/sonarqube-mcp — one-time pull for scan/promotion</div>
-            <div class="unverified-flag">⚑ confirm w/ Gilbert</div>
+            <div class="unverified-flag" style="color: var(--accent-ink);">✓ confirmed — image import succeeded</div>
           </div>
-          <div class="ext-node unverified">
+          <div class="ext-node">
             <div>Azure Container Registry</div>
-            <div class="sub">new ACR, not yet created — pulls happen on every deploy</div>
-            <div class="unverified-flag">⚑ confirm w/ Gilbert</div>
+            <div class="sub">ethicosonarqubecrdev.azurecr.io — pulls happen on every deploy</div>
+            <div class="unverified-flag" style="color: var(--accent-ink);">✓ confirmed — Container App pulls successfully</div>
           </div>
           <div class="ext-node unverified">
             <div class="mono">sqdev.mycompliancemanagement.com</div>
             <div class="sub">SonarQube Server — every MCP request</div>
-            <div class="unverified-flag">⚑ confirm w/ Gilbert</div>
+            <div class="unverified-flag">⚑ not yet tested — blocked on the DNS gap below</div>
           </div>
         </div>
 
@@ -493,6 +513,7 @@
       <div class="legend">
         <span class="item"><span class="swatch" style="background:var(--nva-fill); border:1px solid var(--nva-line);"></span> Existing — NVA-routed egress</span>
         <span class="item"><span class="swatch" style="background:var(--direct-fill); border:1px solid var(--direct-line);"></span> Existing — direct egress</span>
+        <span class="item"><span class="swatch" style="background:var(--accent); border:1px solid var(--accent);"></span> Deployed</span>
         <span class="item"><span class="swatch" style="background:var(--accent-bg); border:1px dashed var(--accent);"></span> Proposed / not yet created</span>
         <span class="item"><span class="swatch" style="background:var(--warn-bg); border:1.5px solid var(--warn);"></span> Needs Gilbert's confirmation</span>
       </div>
@@ -513,24 +534,34 @@
           <tr><td>WFE-DEV2-Subnet</td><td class="mono">20.0.3.224/27</td><td class="mono">Microsoft.App/environments</td><td><span class="egress-tag nva">NVA-routed</span></td></tr>
           <tr><td>RA-DEV2-Subnet</td><td class="mono">20.0.3.192/27</td><td class="mono">Microsoft.App/environments</td><td><span class="egress-tag nva">NVA-routed</span></td></tr>
           <tr><td>EmployeePortal-Dev-Subnet</td><td class="mono">20.0.3.64/27</td><td class="mono">Microsoft.App/environments</td><td><span class="egress-tag direct">Direct egress</span></td></tr>
-          <tr><td><b>SonarQubeMCP-Dev-Subnet</b> <span class="new-badge">Proposed</span></td><td class="mono">20.0.3.160/27</td><td class="mono">Microsoft.App/environments</td><td><span class="egress-tag proposed">NVA-routed (matches majority)</span></td></tr>
+          <tr><td><b>SonarQubeMCP-Dev-Subnet</b> <span class="new-badge deployed-badge">Deployed</span></td><td class="mono">20.0.3.160/27</td><td class="mono">Microsoft.App/environments</td><td><span class="egress-tag deployed">NVA-routed (matches majority)</span></td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
   <section>
-    <h2>Open questions for Gilbert</h2>
+    <h2>Gilbert's original questions — resolved</h2>
     <div class="questions">
-      <div class="q-card"><b>Firewall rules —</b> Does the NVA at <span class="mono">10.2.3.4</span> currently permit outbound 443 to Docker Hub, to a new Azure Container Registry, and to <span class="mono">sqdev.mycompliancemanagement.com</span>? None of this is visible from NSG/route-table config alone.</div>
-      <div class="q-card"><b>Inconsistent pattern —</b> Five sibling Container-Apps subnets route through the NVA; <span class="mono">EmployeePortal-Dev-Subnet</span> alone has no NSG or route table and egresses directly. Is that split intentional, or should the new subnet actually follow the direct-egress pattern instead?</div>
-      <div class="q-card"><b>Proposed subnet —</b> Sign-off on carving <span class="mono">20.0.3.160/27</span> (the one open gap in the existing block) out of <span class="mono">clDEVvNET</span>, delegated to <span class="mono">Microsoft.App/environments</span>, joining <span class="mono">NSG-DEVSubscription</span> + <span class="mono">DEV-RouteTable</span>.</div>
-      <div class="q-card"><b>First internal-only environment —</b> This would be the first Container Apps environment in this VNet set to <span class="mono">internal: true</span> (all 8 existing ones are external). Azure auto-provisions and links the Private DNS Zone on creation — flagging in case that interacts with any existing DNS/firewall assumptions.</div>
+      <div class="q-card resolved"><b>✓ Firewall rules —</b> Approved and confirmed working: the Container App successfully pulls from both Docker Hub (via ACR import) and its own ACR through the NVA at <span class="mono">10.2.3.4</span>. SonarQube Server reachability (<span class="mono">sqdev.mycompliancemanagement.com</span>) is the one leg not yet functionally tested — see the new DNS gap below, which is currently blocking that test.</div>
+      <div class="q-card resolved"><b>✓ Inconsistent pattern —</b> Resolved in favor of the majority (NVA-routed) pattern — Gilbert approved <span class="mono">SonarQubeMCP-Dev-Subnet</span> joining <span class="mono">NSG-DEVSubscription</span> + <span class="mono">DEV-RouteTable</span>, matching five of the six sibling subnets.</div>
+      <div class="q-card resolved"><b>✓ Proposed subnet —</b> Approved and deployed: <span class="mono">20.0.3.160/27</span>, delegated to <span class="mono">Microsoft.App/environments</span>, exactly as proposed.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>New open question for Gilbert</h2>
+    <div class="questions">
+      <div class="q-card"><b>DNS resolution for the internal Container App —</b> The original assumption that Azure auto-provisions and links a Private DNS Zone for an internal Container Apps environment was <b>wrong</b> — confirmed via <span class="mono">az network private-dns zone list</span> (zero zones exist) and Microsoft's own docs, which describe this as a manual setup step. Attempting <span class="mono">curl</span> against the Container App's FQDN from a VPN-connected machine fails with <span class="mono">Could not resolve host</span>.
+      <br><br>
+      Planned fix: create a Private DNS Zone named <span class="mono">thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io</span> (matching the environment's own default domain) in our own resource group, with an <span class="mono">A</span> record <span class="mono">*.internal</span> → <span class="mono">20.0.3.165</span> (the environment's static IP), linked to <span class="mono">clDEVvNET</span>.
+      <br><br>
+      <b>Open question:</b> is a VNet link to <span class="mono">clDEVvNET</span> alone sufficient for a VPN-connected developer laptop to resolve this record, given the VPN gateway itself lives in the peered <span class="mono">clUATvNET</span> (different subscription)? There's no existing precedent in this org for a developer workstation resolving an Azure private DNS record over VPN — the three private DNS zones that do exist today are for VNet-native app-to-database resolution, not developer-machine DNS. Plan is to create the zone/record/link first (unambiguously needed regardless of the VPN question) and re-test; if resolution still fails from VPN after that, this is the point to loop you in on VPN DNS forwarding specifically.</div>
     </div>
   </section>
 
   <footer>
     <span>NWOW work item #134516 · specs/134516-sonarqube-mcp-server/plan.md</span>
-    <span>Compiled from live Azure CLI inspection, Azure DevTest subscription 1 — 2026-08-03</span>
+    <span>Compiled from live Azure CLI inspection, Azure DevTest subscription 1 — 2026-08-26</span>
   </footer>
 </div>
