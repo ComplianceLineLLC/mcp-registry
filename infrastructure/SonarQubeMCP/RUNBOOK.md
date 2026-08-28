@@ -233,6 +233,36 @@ ContainerAppSystemLogs_CL
 (swap in `ContainerAppConsoleLogs_CL` / an HTTP-logs equivalent table name once confirmed — exact table
 name in Log Analytics to be verified once data starts flowing.)
 
-## Step 5 — Monitoring (task #5) and pipeline (task #7)
+## Step 5 — Monitoring (task #5)
+
+**Status: done — 2026-08-28.** Deployed successfully; `provisioningState: "Succeeded"` with all 5
+resources present in `outputResources` (the Action Group and all three metric alerts, plus the log-based
+alert). Three modules extending `main.bicep`:
+
+- [modules/action-group.bicep](modules/action-group.bicep) — `ag-sonarqube-mcp-dev`, emails
+  `ethico-infra@ethico.com` (a distribution group, membership expected to change over time)
+- [modules/metric-alerts.bicep](modules/metric-alerts.bicep) — three separate metric alert rules against
+  the Container App, using metric names confirmed via `az monitor metrics list-definitions` rather than
+  guessed: `RestartCount` > 0 (proxy for health-probe failures — Container Apps has no direct "failed
+  probe" metric), `CpuPercentage` > 80%, `MemoryPercentage` > 80%. Three separate rules rather than one
+  multi-criteria rule, since Azure metric alert criteria under `allOf` require ALL conditions to breach
+  simultaneously to fire — not what we want for "CPU high OR memory high OR a restart happened"
+- [modules/log-alert.bicep](modules/log-alert.bicep) — a `scheduledQueryRules` alert querying
+  `ContainerAppConsoleLogs_CL` for `Log_s contains "ERROR"` — the legacy custom-log table confirmed to
+  have real data flowing (found during the ingress investigation), not the newer resource-specific tables
+  still awaiting their first data
+
+Compiles clean (`az bicep build`, no warnings).
+
+**PowerShell / bash (identical — single line):**
+
+```shell
+az deployment sub create --location eastus --template-file main.bicep
+```
+
+Idempotent with Steps 2–4a — re-running this confirms everything already deployed is unchanged, then adds
+the Action Group and three alert rules.
+
+## Step 6 — Pipeline (task #7)
 
 **Status: pending.** Documented here once executed.

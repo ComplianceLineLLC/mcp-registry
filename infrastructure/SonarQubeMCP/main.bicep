@@ -44,6 +44,18 @@ param minReplicas int = 1
 @description('Maximum Container App replica count')
 param maxReplicas int = 2
 
+@description('Name of the Action Group for monitoring alerts')
+param actionGroupName string = 'ag-sonarqube-mcp-dev'
+
+@description('Email address (or distribution group) to notify on alerts')
+param notificationEmail string = 'ethico-infra@ethico.com'
+
+@description('CPU percentage threshold to alert on')
+param cpuThreshold int = 80
+
+@description('Memory percentage threshold to alert on')
+param memoryThreshold int = 80
+
 resource rg 'Microsoft.Resources/resourceGroups@2023-07-01' = {
   name: resourceGroupName
   location: location
@@ -137,9 +149,41 @@ module environmentDiagnosticSettings 'modules/environment-diagnostic-settings.bi
   ]
 }
 
+module actionGroup 'modules/action-group.bicep' = {
+  name: 'deploy-action-group'
+  scope: rg
+  params: {
+    actionGroupName: actionGroupName
+    notificationEmail: notificationEmail
+  }
+}
+
+module metricAlerts 'modules/metric-alerts.bicep' = {
+  name: 'deploy-metric-alerts'
+  scope: rg
+  params: {
+    containerAppName: containerAppName
+    containerAppId: containerApp.outputs.containerAppId
+    actionGroupId: actionGroup.outputs.actionGroupId
+    cpuThreshold: cpuThreshold
+    memoryThreshold: memoryThreshold
+  }
+}
+
+module logAlert 'modules/log-alert.bicep' = {
+  name: 'deploy-log-alert'
+  scope: rg
+  params: {
+    location: location
+    logAnalyticsWorkspaceId: logAnalytics.outputs.workspaceId
+    actionGroupId: actionGroup.outputs.actionGroupId
+  }
+}
+
 output acrLoginServer string = acr.outputs.acrLoginServer
 output acrId string = acr.outputs.acrId
 output managedIdentityId string = managedIdentity.outputs.identityId
 output managedIdentityClientId string = managedIdentity.outputs.clientId
 output containerAppsEnvironmentId string = containerAppsEnvironment.outputs.environmentId
 output containerAppFqdn string = containerApp.outputs.containerAppFqdn
+output actionGroupId string = actionGroup.outputs.actionGroupId
