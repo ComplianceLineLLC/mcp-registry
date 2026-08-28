@@ -125,6 +125,18 @@ module diagnosticSettings 'modules/diagnostic-settings.bicep' = {
   ]
 }
 
+module environmentDiagnosticSettings 'modules/environment-diagnostic-settings.bicep' = {
+  name: 'deploy-environment-diagnostic-settings'
+  scope: rg
+  params: {
+    environmentName: containerAppsEnvironmentName
+    logAnalyticsWorkspaceId: logAnalytics.outputs.workspaceId
+  }
+  dependsOn: [
+    containerAppsEnvironment
+  ]
+}
+
 output acrLoginServer string = acr.outputs.acrLoginServer
 output acrId string = acr.outputs.acrId
 output managedIdentityId string = managedIdentity.outputs.identityId

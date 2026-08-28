@@ -198,6 +198,41 @@ managedIdentityId:            /subscriptions/.../resourceGroups/rg-ethico-sonarq
 This FQDN is what task #8 substitutes for the `<container-app-fqdn>` placeholders in the registry JSON
 and docs.
 
+## Step 4a — Environment-level HTTP/system logs (2026-08-28, diagnostic)
+
+**Status: pending deploy.** Added [modules/environment-diagnostic-settings.bicep](modules/environment-diagnostic-settings.bicep),
+enabling `ContainerAppHTTPLogs` and `ContainerAppSystemLogs` on the Container Apps Environment itself
+(`cae-sonarqube-mcp-dev`) — distinct from [modules/diagnostic-settings.bicep](modules/diagnostic-settings.bicep),
+which only covers `AllMetrics` on the Container App (that resource type has no log categories at all,
+confirmed during the diagnostic-settings bug fix in Step 4).
+
+Context: reachability testing this week found that a request sent directly to the environment's static
+IP (`20.0.3.165`), bypassing DNS entirely via `curl --resolve`, from a VM natively inside `clDEVvNET`
+with zero peering involved, is still rejected by Azure's platform as "this Container App is stopped or
+does not exist" — despite the app itself being confirmed healthy and the revision showing
+`Healthy`/`Running` with 100% traffic. `ContainerAppHTTPLogs` should show, authoritatively, whether these
+test requests even reached the platform's edge proxy and what it decided — turning a black-box HTTP
+response into an actual, inspectable log line. Full diagnostic trail and leading theory (the subnet's
+`0.0.0.0/0`-to-NVA route interfering with Container Apps' own internal platform requirements) are in
+[network-architecture.html](../../specs/134516-sonarqube-mcp-server/network-architecture.html) — shared
+with Gilbert, who's since had to step away for a family emergency.
+
+```shell
+az deployment sub create --location eastus --template-file main.bicep
+```
+
+After deploying, re-run one of the `curl --resolve` tests from Step 4's reachability testing, then query
+the workspace, e.g.:
+
+```kusto
+ContainerAppSystemLogs_CL
+| where TimeGenerated > ago(15m)
+| order by TimeGenerated desc
+```
+
+(swap in `ContainerAppConsoleLogs_CL` / an HTTP-logs equivalent table name once confirmed — exact table
+name in Log Analytics to be verified once data starts flowing.)
+
 ## Step 5 — Monitoring (task #5) and pipeline (task #7)
 
 **Status: pending.** Documented here once executed.
