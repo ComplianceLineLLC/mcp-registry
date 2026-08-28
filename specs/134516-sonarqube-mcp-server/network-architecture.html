@@ -410,16 +410,45 @@
 
 <div class="page">
   <header class="top">
-    <span class="status-pill">Deployed — one new open question for Gilbert (DNS)</span>
+    <span class="status-pill">New finding — ingress appears broken for this internal environment specifically</span>
     <h1>SonarQube MCP Server — Network Architecture</h1>
-    <p class="subhead">Status update on work item #134516's network path. The subnet, Container Apps Environment, and Container App are live — Gilbert's original questions below are resolved. This update covers what changed since then, plus one new gap found post-deployment: internal DNS resolution for the Container App's FQDN, which turned out to need manual setup rather than the auto-provisioning originally assumed.</p>
+    <p class="subhead">Status update on work item #134516's network path. The subnet, Container Apps Environment, and Container App are deployed and healthy — but testing this week surfaced something more significant than the DNS gap flagged on 8/26: a correctly-addressed request straight to the environment's own static IP, from a VM natively inside <span class="mono">clDEVvNET</span> with no DNS or peering involved at all, is rejected by Azure's own ingress as "this Container App is stopped or does not exist." Full diagnostic trail below — this now looks like it needs your input on the NVA, not just a DNS zone.</p>
     <div class="meta-row">
       <span><b>Subscription</b> <span class="mono">Azure DevTest subscription 1</span></span>
       <span><b>Sub ID</b> <span class="mono">326c5c7f-73c8-4e8b-b146-d643c06ced0d</span></span>
       <span><b>VNet</b> <span class="mono">clDEVvNET</span> (RG-PolicyManagement, eastus)</span>
-      <span><b>As of</b> 2026-08-26</span>
+      <span><b>As of</b> 2026-08-28</span>
     </div>
   </header>
+
+  <section>
+    <h2>New finding (2026-08-28): ingress routing, not just DNS</h2>
+    <div class="questions">
+      <div class="q-card"><b>What we found —</b> A request sent directly to the environment's static IP (<span class="mono">20.0.3.165</span>), from <span class="mono">CL-DEV-A01</span> — a VM natively inside <span class="mono">clDEVvNET</span> itself, no peering or VPN involved — with the exact correct hostname in both the TLS SNI and the HTTP <span class="mono">Host</span> header, is rejected by Azure's platform with a generic <span class="mono">404</span>: <i>"This Container App is stopped or does not exist."</i> Verbose curl output confirms this is a real, direct TCP+TLS connection to our own environment's IP — not a DNS, proxy, or wrong-endpoint artifact.</div>
+      <div class="q-card"><b>What we've ruled out —</b> The app itself is healthy: its own logs show a clean startup, and a <span class="mono">wget --spider</span> run from inside the running container confirmed it can reach out to <span class="mono">sqdev.mycompliancemanagement.com</span> through the NVA without issue. Azure's control plane agrees — revision <span class="mono">Healthy</span>/<span class="mono">Running</span>, 100% traffic weight, ingress config exactly as intended. So this isn't an app problem, and it isn't (only) a DNS problem — DNS was bypassed entirely for this test via <span class="mono">curl --resolve</span>, confirmed with <span class="mono">-v</span> to actually be connecting to <span class="mono">20.0.3.165</span> with no proxy involved.</div>
+      <div class="q-card"><b>Leading theory —</b> The subnet's route table sends <b>all</b> <span class="mono">0.0.0.0/0</span> traffic to the NVA at <span class="mono">10.2.3.4</span>. Microsoft's own Container Apps docs specifically warn: <i>"You must allow traffic to the <span class="mono">AzurePlatformDNS</span> service tag (which includes <span class="mono">168.63.129.16</span>). Blocking this service tag prevents your Container Apps environment from functioning correctly."</i> We already confirmed the <b>app's own outbound calls</b> work fine through the NVA — but the platform's <b>internal ingress-to-replica routing</b> is a separate mechanism, and may depend on reaching that same platform IP (or others) that the current UDR could be interfering with.</div>
+      <div class="q-card"><b>Why this may be new territory, not a regression —</b> Every one of the other 8 Container Apps environments already in <span class="mono">clDEVvNET</span> is <b>external</b>. Ours is the first <b>internal</b> one ever deployed here. Internal environments use a genuinely different mechanism — an actual Azure internal load balancer — so the existing NVA-routed UDR pattern (which works fine for 5 sibling external environments) has simply never been exercised against this specific architecture before now.</div>
+      <div class="q-card"><b>What we need from you —</b> Can you check whether the NVA correctly passes through <span class="mono">AzurePlatformDNS</span> (<span class="mono">168.63.129.16</span>) and any other Azure platform-management traffic Container Apps depends on internally? And separately — does an internal Container Apps environment need a different egress arrangement entirely (e.g. more like <span class="mono">EmployeePortal-Dev-Subnet</span>'s direct-egress pattern) rather than the shared NVA-routed one the majority of subnets use? This is now the higher-priority question — the DNS Private Zone gap noted below still needs to happen eventually, but it's moot until ingress itself is confirmed working.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Diagnostic trail — tests run, in order</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Test</th><th>From</th><th>Result</th><th>What it ruled out</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td class="mono">curl .../health</td><td>CL-DEV-WEB01 (Pay-As-You-Go Dev/Test sub, clUATvNET)</td><td>DNS: <span class="mono">Could not resolve host</span> (earlier test, 8/26)</td><td>Confirmed the DNS gap exists</td></tr>
+          <tr><td>2</td><td class="mono">curl .../health</td><td>CL-DEV-WEB01</td><td>404 "stopped or does not exist"</td><td>Something resolves now — but to what?</td></tr>
+          <tr><td>3</td><td class="mono">curl --resolve ...:20.0.3.165 .../health</td><td>CL-DEV-WEB01</td><td>Same 404, byte-for-byte</td><td>Not conclusive alone — WEB01's VNet/subscription path was unclear</td></tr>
+          <tr><td>4</td><td class="mono">curl --resolve ...:20.0.3.165 .../health</td><td><b>CL-DEV-A01</b> (same subscription, native clDEVvNET, zero peering)</td><td>Same 404, byte-for-byte</td><td>Rules out cross-VNet/cross-subscription routing entirely</td></tr>
+          <tr><td>5</td><td class="mono">curl -v --resolve ...</td><td>CL-DEV-A01</td><td>Confirmed real connection to <span class="mono">20.0.3.165</span>, correct SNI/Host header, no proxy env vars set</td><td>Rules out DNS, proxy interception, and wrong-endpoint theories — this is a genuine request to our own environment being rejected</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
 
   <section>
     <h2>End-to-end flow</h2>
@@ -550,18 +579,18 @@
   </section>
 
   <section>
-    <h2>New open question for Gilbert</h2>
+    <h2>Still-needed follow-up (secondary — see the ingress finding above first)</h2>
     <div class="questions">
-      <div class="q-card"><b>DNS resolution for the internal Container App —</b> The original assumption that Azure auto-provisions and links a Private DNS Zone for an internal Container Apps environment was <b>wrong</b> — confirmed via <span class="mono">az network private-dns zone list</span> (zero zones exist) and Microsoft's own docs, which describe this as a manual setup step. Attempting <span class="mono">curl</span> against the Container App's FQDN from a VPN-connected machine fails with <span class="mono">Could not resolve host</span>.
+      <div class="q-card"><b>DNS resolution for the internal Container App —</b> Separate from today's ingress finding, we also confirmed the original assumption that Azure auto-provisions and links a Private DNS Zone for an internal Container Apps environment was <b>wrong</b> — confirmed via <span class="mono">az network private-dns zone list</span> (zero zones exist) and Microsoft's own docs, which describe this as a manual setup step.
       <br><br>
-      Planned fix: create a Private DNS Zone named <span class="mono">thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io</span> (matching the environment's own default domain) in our own resource group, with an <span class="mono">A</span> record <span class="mono">*.internal</span> → <span class="mono">20.0.3.165</span> (the environment's static IP), linked to <span class="mono">clDEVvNET</span>.
+      Planned fix (still not implemented, still holding off until we hear from you): create a Private DNS Zone named <span class="mono">thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io</span> (matching the environment's own default domain) in our own resource group, with an <span class="mono">A</span> record <span class="mono">*.internal</span> → <span class="mono">20.0.3.165</span> (the environment's static IP), linked to <span class="mono">clDEVvNET</span>.
       <br><br>
-      <b>Open question:</b> is a VNet link to <span class="mono">clDEVvNET</span> alone sufficient for a VPN-connected developer laptop to resolve this record, given the VPN gateway itself lives in the peered <span class="mono">clUATvNET</span> (different subscription)? There's no existing precedent in this org for a developer workstation resolving an Azure private DNS record over VPN — the three private DNS zones that do exist today are for VNet-native app-to-database resolution, not developer-machine DNS. Plan is to create the zone/record/link first (unambiguously needed regardless of the VPN question) and re-test; if resolution still fails from VPN after that, this is the point to loop you in on VPN DNS forwarding specifically. Note this is now purely a DNS/ingress-side question — egress (the firewall rules question above) is fully proven end-to-end, so nothing about this is blocked on or related to the NVA.</div>
+      <b>Open question:</b> is a VNet link to <span class="mono">clDEVvNET</span> alone sufficient for a VPN-connected developer laptop to resolve this record, given the VPN gateway itself lives in the peered <span class="mono">clUATvNET</span> (different subscription)? There's no existing precedent in this org for a developer workstation resolving an Azure private DNS record over VPN. <b>This question is now moot until the ingress finding above is resolved</b> — even with perfect DNS, the same "app doesn't exist" response would come back, since that's happening at the IP level, before DNS is even a factor.</div>
     </div>
   </section>
 
   <footer>
     <span>NWOW work item #134516 · specs/134516-sonarqube-mcp-server/plan.md</span>
-    <span>Compiled from live Azure CLI inspection, Azure DevTest subscription 1 — 2026-08-26</span>
+    <span>Compiled from live Azure CLI inspection, Azure DevTest subscription 1 — 2026-08-28</span>
   </footer>
 </div>
