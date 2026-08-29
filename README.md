@@ -214,7 +214,9 @@ The SonarQube MCP is centrally hosted by the organization as an Azure Container 
 2. Go to **My Account → Security → Generate Tokens**
 3. For **Type**, choose **User** — not Project or Global Administrator; those are rejected by the MCP
 4. Name it `mcp-<your-username>` (e.g. `mcp-jsmith`) so it's distinguishable from other tokens like CI/CD scanner tokens in your account
-5. Copy the generated token now — it won't be shown again
+5. **Set an expiration date**, e.g. 90 days — do not choose "No expiration." 
+Note: Our SonarQube current license doesn't allow us to eliminate the option. Tokens without expiration dates are actively monitored.
+6. Copy the generated token now — it won't be shown again
 
 > **This token is personal.** Don't share it or commit it anywhere. It ties every request the MCP makes back to your own SonarQube account and audit log.
 
