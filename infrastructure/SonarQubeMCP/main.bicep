@@ -137,18 +137,6 @@ module diagnosticSettings 'modules/diagnostic-settings.bicep' = {
   ]
 }
 
-module environmentDiagnosticSettings 'modules/environment-diagnostic-settings.bicep' = {
-  name: 'deploy-environment-diagnostic-settings'
-  scope: rg
-  params: {
-    environmentName: containerAppsEnvironmentName
-    logAnalyticsWorkspaceId: logAnalytics.outputs.workspaceId
-  }
-  dependsOn: [
-    containerAppsEnvironment
-  ]
-}
-
 module actionGroup 'modules/action-group.bicep' = {
   name: 'deploy-action-group'
   scope: rg

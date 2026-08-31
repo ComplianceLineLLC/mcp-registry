@@ -251,6 +251,17 @@ open:** whether the DNS gap noted below (no Private DNS Zone; resolution origina
 CL-DEV-WEB01) still applies to the corrected hostname for a typical developer machine, or whether public
 DNS already resolves it the way CL-DEV-A01 did during this test.
 
+**Removed 2026-08-31.** Now that the root cause above is found, this diagnostic-only logging is no longer
+needed — [modules/environment-diagnostic-settings.bicep](modules/environment-diagnostic-settings.bicep)
+and its module block in `main.bicep` have been deleted. The already-deployed diagnostic setting resource
+(`diag-sonarqube-mcp-env`, on `cae-sonarqube-mcp-dev`) isn't removed automatically by dropping it from the
+template — `az deployment sub create` runs incrementally and won't delete a resource just because it's no
+longer in the file. Delete it directly:
+
+```shell
+az monitor diagnostic-settings delete --name diag-sonarqube-mcp-env --resource cae-sonarqube-mcp-dev --resource-group rg-ethico-sonarqube-mcp-dev --resource-type Microsoft.App/managedEnvironments
+```
+
 ## Step 5 — Monitoring (task #5)
 
 **Status: done — 2026-08-28.** Deployed successfully; `provisioningState: "Succeeded"` with all 5
