@@ -19,7 +19,7 @@
     "remotes": [
       {
         "transportType": "http",
-        "url": "https://ca-sonarqube-mcp-dev.internal.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/mcp"
+        "url": "https://ca-sonarqube-mcp-dev.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/mcp"
       }
     ]
   }

@@ -87,10 +87,10 @@ From within the VNet (e.g., via VPN or a bastion host), confirm the server is he
 
 ```bash
 # Liveness check — should return HTTP 200 with an empty body
-curl https://ca-sonarqube-mcp-dev.internal.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/health
+curl https://ca-sonarqube-mcp-dev.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/health
 
 # Version check — should return {"version":"1.24.0"}
-curl https://ca-sonarqube-mcp-dev.internal.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/info
+curl https://ca-sonarqube-mcp-dev.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/info
 ```
 
 ## Developer Configuration
@@ -102,7 +102,7 @@ Developers do **not** need Docker installed. Add the following to `C:\Users\<you
   "servers": {
     "mcp/sonarqube": {
       "type": "http",
-      "url": "https://ca-sonarqube-mcp-dev.internal.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/mcp",
+      "url": "https://ca-sonarqube-mcp-dev.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/mcp",
       "headers": {
         "Authorization": "Bearer <your-sonarqube-user-token>"
       }

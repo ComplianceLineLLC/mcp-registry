@@ -242,7 +242,7 @@ Note: Our SonarQube current license doesn't allow us to eliminate the option. To
   "servers": {
     "mcp/sonarqube": {
       "type": "http",
-      "url": "https://ca-sonarqube-mcp-dev.internal.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/mcp",
+      "url": "https://ca-sonarqube-mcp-dev.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/mcp",
       "headers": {
         "Authorization": "Bearer ${input:sonarqube-token}"
       }
@@ -269,7 +269,7 @@ VS Code prompts you for the token the first time the server starts, and stores i
 Run:
 
 ```shell
-claude mcp add sonarqube --transport http https://ca-sonarqube-mcp-dev.internal.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/mcp --header "Authorization: Bearer <your-sonarqube-user-token>"
+claude mcp add sonarqube --transport http https://ca-sonarqube-mcp-dev.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/mcp --header "Authorization: Bearer <your-sonarqube-user-token>"
 ```
 
 Replace `<your-sonarqube-user-token>` with the token from Step 1. This adds the server to your user-level Claude Code config.
@@ -281,7 +281,7 @@ If you'd rather edit the config file directly, note that Claude Code's format di
   "mcpServers": {
     "sonarqube": {
       "type": "http",
-      "url": "https://ca-sonarqube-mcp-dev.internal.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/mcp",
+      "url": "https://ca-sonarqube-mcp-dev.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/mcp",
       "headers": {
         "Authorization": "Bearer <your-sonarqube-user-token>"
       }

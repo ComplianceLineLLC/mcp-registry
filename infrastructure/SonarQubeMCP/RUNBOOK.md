@@ -158,7 +158,7 @@ extended with four new modules:
 **First deployment attempt:** the resource group, ACR, identity, role assignment, Log Analytics
 workspace, Container Apps Environment, and Container App **all deployed successfully** —
 `ca-sonarqube-mcp-dev` came up with `provisioningState: "Succeeded"` and FQDN
-`ca-sonarqube-mcp-dev.internal.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io`. Only the last
+`ca-sonarqube-mcp-dev.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io`. Only the last
 module, `deploy-diagnostic-settings`, failed:
 
 ```text
@@ -189,7 +189,7 @@ everything already deployed is unchanged, then retries only `deploy-diagnostic-s
 **Redeploy result:** succeeded in 56.6s. Final outputs:
 
 ```text
-containerAppFqdn:            ca-sonarqube-mcp-dev.internal.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io
+containerAppFqdn:            ca-sonarqube-mcp-dev.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io
 containerAppsEnvironmentId:  /subscriptions/.../resourceGroups/rg-ethico-sonarqube-mcp-dev/providers/Microsoft.App/managedEnvironments/cae-sonarqube-mcp-dev
 acrLoginServer:               ethicosonarqubecrdev.azurecr.io
 managedIdentityId:            /subscriptions/.../resourceGroups/rg-ethico-sonarqube-mcp-dev/providers/Microsoft.ManagedIdentity/userAssignedIdentities/ethico-sonarqube-mcp-mi-dev
@@ -232,6 +232,24 @@ ContainerAppSystemLogs_CL
 
 (swap in `ContainerAppConsoleLogs_CL` / an HTTP-logs equivalent table name once confirmed — exact table
 name in Log Analytics to be verified once data starts flowing.)
+
+**Resolved 2026-08-31.** Root cause was the FQDN itself, not the network or the app. Every test above used
+`ca-sonarqube-mcp-dev.internal.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io` — the exact value
+`main.bicep`'s `containerAppFqdn` output reported, and the pattern Microsoft's own docs describe for
+internal Container Apps environments. That hostname was never actually bound to anything in Azure's
+ingress: TCP/TLS to `20.0.3.165` always succeeded (same environment, doesn't check the Host header) while
+every real HTTP request got the generic "stopped or does not exist" 404, and `ContainerAppHTTPLogs`/
+`ContainerAppSystemLogs` stayed empty because there was no registered app for the platform to log a
+decision against. Dropping the `.internal.` segment —
+`ca-sonarqube-mcp-dev.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io` — routes correctly; confirmed via
+`curl --resolve ...:443:20.0.3.165 .../mcp -H "Authorization: Bearer <token>"`, which returned a genuine
+`405 Method Not Allowed` from the app's own Jetty server (GET isn't a valid method against `/mcp`), not
+Azure's synthetic 404. This contradicts Microsoft's documented naming convention for internal
+environments, so it's still worth a low-priority informational note to Microsoft/Gilbert, but it's no
+longer blocking. All FQDN references across the repo have been corrected to drop `.internal.`. **Still
+open:** whether the DNS gap noted below (no Private DNS Zone; resolution originally failed from
+CL-DEV-WEB01) still applies to the corrected hostname for a typical developer machine, or whether public
+DNS already resolves it the way CL-DEV-A01 did during this test.
 
 ## Step 5 — Monitoring (task #5)
 
