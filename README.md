@@ -204,6 +204,14 @@ Key points:
 The SonarQube MCP is centrally hosted by the organization as an Azure Container Apps instance with **internal-only ingress** (no public internet endpoint). Docker is **not** required on your machine.
 
 > **Network Requirement:** You must be connected to the **corporate VPN** to reach the internal Container Apps URL.
+>
+> **Possible additional one-time setup step — unverified, pending confirmation (2026-09-02):** our network team is investigating a VPN-client reachability gap and has proposed adding a static hosts-file entry mapping the server's hostname directly to its internal IP, partly as a way of guaranteeing this only resolves while you're on the VPN/corporate network:
+>
+> ```text
+> 20.0.3.165   ca-sonarqube-mcp-dev.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io
+> ```
+>
+> On Windows, add this line to `C:\Windows\System32\drivers\etc\hosts` (requires administrator rights). **This has not been confirmed to work yet** — don't rely on it until this note says otherwise, since the underlying reachability issue it's meant to address is still under investigation.
 
 - **Token Requirement:** You must use a SonarQube **USER token** only. Project tokens and Global Administrator tokens are not supported by SonarQube Server's MCP integration and will not work.
 - **Read-Only:** The server enforces read-only mode — you can view issues and analysis results but cannot change issue statuses or quality gates through the MCP.
