@@ -1,18 +1,22 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "mcp/microsoft-learn",
-  "title": "Microsoft Learn",
-  "description": "Access to Microsoft Learn content and interactive tutorials.",
-  "version": "0.1.0",
-  "executionModel": "remote-http",
-  "notes": "Fully remote MCP server hosted and managed by Microsoft. No local binary or npm package is required. The client connects directly to the Microsoft Learn MCP endpoint over HTTPS.",
-  "remotes": [
-    {
-      "transportType": "http",
-      "url": "https://learn.microsoft.com/api/mcp"
+  "_meta": {
+    "io.modelcontextprotocol.registry/official": {
+      "isLatest": true,
+      "status": "active",
+      "updatedAt": "2026-03-19T15:28:30Z"
     }
-  ],
-  "install": {
-    "type": "manual"
+  },
+  "server": {
+    "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+    "name": "mcp/microsoft-learn",
+    "title": "Microsoft Learn",
+    "description": "Access to Microsoft Learn content and interactive tutorials.",
+    "version": "0.1.0",
+    "remotes": [
+      {
+        "transportType": "http",
+        "url": "https://learn.microsoft.com/api/mcp"
+      }
+    ]
   }
 }

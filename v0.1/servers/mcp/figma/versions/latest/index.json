@@ -1,18 +1,22 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "mcp/figma",
-  "title": "Figma",
-  "description": "Official Figma MCP server for design file access and collaboration.",
-  "version": "1.0.0",
-  "executionModel": "remote-http",
-  "notes": "Official Figma MCP server hosted and managed by Figma. No local binary or npm package is required. The client connects directly to the Figma MCP endpoint over HTTPS.",
-  "remotes": [
-    {
-      "transportType": "http",
-      "url": "https://mcp.figma.com/mcp"
+  "_meta": {
+    "io.modelcontextprotocol.registry/official": {
+      "isLatest": true,
+      "status": "active",
+      "updatedAt": "2026-03-31T00:00:00Z"
     }
-  ],
-  "install": {
-    "type": "manual"
+  },
+  "server": {
+    "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+    "name": "mcp/figma",
+    "title": "Figma",
+    "description": "Official Figma MCP server for design file access and collaboration.",
+    "version": "1.0.0",
+    "remotes": [
+      {
+        "transportType": "http",
+        "url": "https://mcp.figma.com/mcp"
+      }
+    ]
   }
 }
