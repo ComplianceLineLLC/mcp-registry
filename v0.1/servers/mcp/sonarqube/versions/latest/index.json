@@ -19,7 +19,23 @@
     "remotes": [
       {
         "transportType": "http",
-        "url": "https://ca-sonarqube-mcp-dev.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/mcp"
+        "url": "https://ca-sonarqube-mcp-dev.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/mcp",
+        "headers": [
+          {
+            "name": "Authorization",
+            "description": "SonarQube USER token (mcp-<username>), sent as a Bearer token",
+            "isRequired": true,
+            "isSecret": true,
+            "value": "Bearer {sonarqube_token}",
+            "variables": {
+              "sonarqube_token": {
+                "description": "Your SonarQube USER token (My Account → Security → Generate Tokens, Type: User)",
+                "isRequired": true,
+                "isSecret": true
+              }
+            }
+          }
+        ]
       }
     ]
   }
