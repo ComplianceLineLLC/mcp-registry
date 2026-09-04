@@ -249,7 +249,7 @@ Note: Our SonarQube current license doesn't allow us to eliminate the option. To
 
 1. Type `@mcp` in Copilot Chat and locate **SonarQube** in the Organization Approved list.
 2. Install it via the editor prompt — no local package to install, since this is a remote server (same as Figma).
-3. Add your token. VS Code supports securely-prompted input variables so your token isn't stored in plaintext in `mcp.json`. In the file `@mcp` installed into (check `.vscode/mcp.json` in your workspace first, otherwise `C:\Users\<your user>\AppData\Roaming\Code\User\mcp.json`), confirm or add:
+3. **Expected (2026-09-03, not yet confirmed):** the registry now declares the `Authorization` header as a required secret input directly, so VS Code should prompt you for your token during install and populate `mcp.json` itself — no manual editing needed. **This has not been tested end-to-end yet** (it depends on VS Code's installer actually reading the `headers` field from our registry entry, which is a looser convention than the strict registry schema it's modeled on). If VS Code instead creates a bare entry with no `headers` at all (the previously-confirmed behavior) — or if it shows a "Dynamic Client Registration not supported" dialog, which means it's trying OAuth instead of a static token; **click Cancel, don't provide a manual client ID** — fall back to editing `mcp.json` directly, confirmed working as of 2026-09-03. Check `.vscode/mcp.json` in your workspace first, otherwise `C:\Users\<your user>\AppData\Roaming\Code\User\mcp.json`, and confirm or add:
 
 ```json
 {
@@ -273,9 +273,9 @@ Note: Our SonarQube current license doesn't allow us to eliminate the option. To
 }
 ```
 
-VS Code prompts you for the token the first time the server starts, and stores it securely rather than writing it into this file.
+VS Code prompts you for the token the first time the server starts, and stores it securely rather than writing it into this file. **Confirmed 2026-09-03:** this is a one-time prompt — fully quitting and reopening VS Code does not re-prompt you, it reuses the securely-stored value.
 
-> **Not yet field-verified against our registry** — this is VS Code's documented mechanism for secret headers, but nobody's confirmed it works cleanly end-to-end through installation via `@mcp` from our specific gallery yet. If it doesn't behave as expected, fall back to a plain hardcoded header instead (known to work, just stores the token in plaintext in the file):
+> **Confirmed working end-to-end as of 2026-09-03** (this was the first real field verification of VS Code's secret-header mechanism through our registry). If it doesn't behave as expected, fall back to a plain hardcoded header instead (known to work, just stores the token in plaintext in the file):
 >
 > ```json
 > "headers": { "Authorization": "Bearer <your-sonarqube-user-token>" }
