@@ -32,6 +32,13 @@ param containerAppsEnvironmentName string = 'cae-sonarqube-mcp-dev'
 @description('Name of the Container App')
 param containerAppName string = 'ca-sonarqube-mcp-dev'
 
+// This default is NOT kept in sync with routine image updates - the image-update pipeline (task #7,
+// devops repo) updates the running Container App directly via `az containerapp update`, deliberately
+// without touching this file, so this value goes stale the moment that pipeline runs. That's accepted:
+// this template is a one-time/disaster-recovery setup tool, not the routine update mechanism. If this
+// environment is ever rebuilt from scratch, expect it to come up pinned to whatever old digest is here -
+// re-run the image-update pipeline immediately after to bring it to the actual current version, rather
+// than trying to hand-edit this default beforehand.
 @description('Digest-pinned SonarQube MCP image reference, promoted in task #3')
 param imageDigest string = 'sha256:edf80a38956d7d8de75166c1ae173b73c8a01a9a62038232ce0b75ead7dc450c'
 

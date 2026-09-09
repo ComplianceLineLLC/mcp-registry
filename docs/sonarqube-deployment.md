@@ -131,31 +131,30 @@ See [mcp-maintenance.md](mcp-maintenance.md) for the full update policy. Short v
    - `v0.1/servers/mcp/sonarqube/versions/latest/index.json`
    - `README.md` (any version references)
    - This file (image tag in the deploy command and the rollback section below)
-3. Trivy-scan the new tag, promote it into ACR by digest, then redeploy via Bicep — **never** point the
-   Container App at the Docker Hub tag directly (see
+3. Trivy-scan the new tag, promote it into ACR by digest, then update the running Container App directly
+   — **never** point the Container App at the Docker Hub tag directly (see
    [infrastructure/SonarQubeMCP/RUNBOOK.md](../infrastructure/SonarQubeMCP/RUNBOOK.md#step-3--image-promotion)
-   for the exact commands):
+   for the exact commands). This is what the `devops` repo's image-update pipeline (task #7,
+   [devops/Pipelines/SonarQubeMCP/](https://dev.azure.com/Ethico/NWOW/_git/devops)) automates end to end —
+   trigger it with the new version tag rather than running these by hand when it's available:
    ```bash
    az acr import --name <your-acr-name> --source docker.io/sonarsource/sonarqube-mcp:<new-version-tag> --image sonarsource/sonarqube-mcp:<new-version-tag>
    az acr repository show --name <your-acr-name> --image sonarsource/sonarqube-mcp:<new-version-tag> --query digest -o tsv
+   az containerapp update --name ca-sonarqube-mcp-dev --resource-group rg-ethico-sonarqube-mcp-dev --image <your-acr-name>.azurecr.io/sonarsource/sonarqube-mcp@<digest-from-above>
    ```
-   Update `imageDigest` in [infrastructure/SonarQubeMCP/main.bicep](../infrastructure/SonarQubeMCP/main.bicep) to the digest returned above, then redeploy:
-   ```bash
-   az deployment sub create --location eastus --template-file infrastructure/SonarQubeMCP/main.bicep
-   ```
+   **Intentionally, this does not touch `imageDigest` in [main.bicep](../infrastructure/SonarQubeMCP/main.bicep)** — see the note on that parameter for why, and don't "fix" the drift by adding a step here that edits and redeploys Bicep for a routine update.
 4. Re-verify `/health` and `/info`, then merge the PR
 
 ## Rollback
 
-If an update causes issues, revert immediately by pointing back at the previously-promoted digest —
-**not** by pulling a Docker Hub tag directly, since only digests that have already been Trivy-scanned and
-promoted into ACR should ever run here:
+If an update causes issues, revert immediately by pointing the running Container App back at the
+previously-promoted digest — **not** by pulling a Docker Hub tag directly, and **not** by redeploying
+`main.bicep`, since only digests that have already been Trivy-scanned and promoted into ACR should ever
+run here, and a routine rollback has no reason to touch the rest of the infrastructure:
 
-1. Set `imageDigest` in [infrastructure/SonarQubeMCP/main.bicep](../infrastructure/SonarQubeMCP/main.bicep) back to the prior known-good digest (see RUNBOOK.md for the promotion history)
-2. Redeploy:
-   ```bash
-   az deployment sub create --location eastus --template-file infrastructure/SonarQubeMCP/main.bicep
-   ```
+```bash
+az containerapp update --name ca-sonarqube-mcp-dev --resource-group rg-ethico-sonarqube-mcp-dev --image <your-acr-name>.azurecr.io/sonarsource/sonarqube-mcp@<prior-known-good-digest>
+```
 
 Then open a PR to revert the registry files to the previous version. (`1.24.0.3152`
 — digest `sha256:edf80a38956d7d8de75166c1ae173b73c8a01a9a62038232ce0b75ead7dc450c` — is both the current
@@ -163,3 +162,12 @@ and the only version ever actually deployed; the originally-planned `1.20.0.2929
 promoted, see [infrastructure/SonarQubeMCP/RUNBOOK.md](../infrastructure/SonarQubeMCP/RUNBOOK.md#step-3--image-promotion).
 Update this rollback target whenever a future version is promoted, to whatever digest was running
 immediately before it.)
+
+> **Why `main.bicep`'s `imageDigest` isn't part of routine updates or rollbacks:** that parameter's
+> hardcoded default only matters for a full from-scratch redeploy of this environment (e.g. disaster
+> recovery) — it is understood to become stale the moment either process above runs, since neither one
+> touches the file. That's accepted, not a bug: `main.bicep` is a one-time setup tool, not the routine
+> update mechanism, and we're not expecting to re-run it outside of a full environment rebuild. If that
+> ever happens, the expected sequence is `main.bicep` first (bringing up the environment pinned to
+> whatever old digest is on file), then re-running the image-update pipeline (task #7) immediately after
+> to bring the Container App up to the actual current version — not editing the stale default beforehand.
