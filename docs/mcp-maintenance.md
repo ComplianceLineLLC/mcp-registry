@@ -41,9 +41,27 @@ npm view chrome-devtools-mcp version
 # Angular CLI
 npm view @angular/cli version
 
-# SonarQube MCP — check GitHub Releases page
-# https://github.com/SonarSource/sonarqube-mcp-server/releases
+# SonarQube MCP — compare what's actually deployed against the latest release.
+# Checking mcp-maintenance.md's inventory table or the registry JSON isn't enough on its own - those
+# are a record of intent, not live truth, and could be out of sync if a step was ever missed. The /info
+# endpoint reflects whatever's genuinely running right now.
+curl https://ca-sonarqube-mcp-dev.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/info
+gh api repos/SonarSource/sonarqube-mcp-server/releases/latest --jq .tag_name
 ```
+
+Example run (2026-09-09) — this is illustrative of the comparison, not a claim about current state, since
+the whole point is that these two numbers can and do drift apart over time:
+
+```text
+$ curl https://ca-sonarqube-mcp-dev.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/info
+{"version":"1.24.0.3152"}
+$ gh api repos/SonarSource/sonarqube-mcp-server/releases/latest --jq .tag_name
+1.26.0.4269
+```
+
+If the two don't match, that's the trigger to check the release notes between them and decide whether to
+run the image-update pipeline (task #7) — not every new release is worth reacting to immediately, but a
+gap should be a deliberate decision, not an unnoticed one.
 
 ### 2. Security Scan
 
