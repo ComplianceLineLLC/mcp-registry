@@ -410,14 +410,14 @@
 
 <div class="page">
   <header class="top">
-    <span class="status-pill">FQDN mystery resolved · one new gap open — VPN-client reachability</span>
+    <span class="status-pill">Fully resolved — developers connecting successfully</span>
     <h1>SonarQube MCP Server — Network Architecture</h1>
-    <p class="subhead">Status update on work item #134516's network path. The ingress mystery is resolved — your TCP test on 8/29 and our own diagnostics were both right, just about different layers: the network path was never blocked, but the FQDN every test used (<span class="mono">ca-sonarqube-mcp-dev.internal.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io</span>, matching Microsoft's own documented naming pattern for internal environments) was never actually bound to anything in Container Apps' ingress. Dropping the <span class="mono">.internal.</span> segment routes correctly, confirmed from a VM native to <span class="mono">clDEVvNET</span>. <b>New, separate finding as of 8/31:</b> the same corrected request times out at the TCP layer from an actual VPN-connected developer laptop — see "Still open" below. This is squarely a reachability question for actual VPN clients, not a repeat of the FQDN issue.</p>
+    <p class="subhead">Status update on work item #134516's network path. Both issues below are now resolved. First, the FQDN mystery: the hostname every early test used (<span class="mono">ca-sonarqube-mcp-dev.internal.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io</span>, matching Microsoft's own documented naming pattern for internal environments) was never actually bound to anything in Container Apps' ingress — dropping the <span class="mono">.internal.</span> segment routes correctly. Second, a separate VPN-client reachability gap found afterward (9/1): a site-to-site VPN traffic rule wasn't allowing traffic through to this subnet, fixed by Gilbert on 9/3. Developers have been successfully connecting since — see <a href="../134516-sonarqube-mcp-server/plan.md">plan.md</a> for the full verification history.</p>
     <div class="meta-row">
       <span><b>Subscription</b> <span class="mono">Azure DevTest subscription 1</span></span>
       <span><b>Sub ID</b> <span class="mono">326c5c7f-73c8-4e8b-b146-d643c06ced0d</span></span>
       <span><b>VNet</b> <span class="mono">clDEVvNET</span> (RG-PolicyManagement, eastus)</span>
-      <span><b>As of</b> 2026-08-31</span>
+      <span><b>As of</b> 2026-09-09</span>
     </div>
   </header>
 
@@ -431,11 +431,11 @@
   </section>
 
   <section>
-    <h2>Still open (2026-08-31): reachable inside the VNet, not yet from a VPN client</h2>
+    <h2>Resolved 2026-09-03: VPN-client reachability</h2>
     <div class="questions">
-      <div class="q-card"><b>New finding —</b> The same corrected request (<span class="mono">curl --resolve ...:443:20.0.3.165 .../mcp</span>, no <span class="mono">.internal.</span>) that reached the app cleanly from <span class="mono">CL-DEV-A01</span> instead <b>times out at the TCP layer</b> when run from an actual VPN-connected developer laptop: <span class="mono">connect to 20.0.3.165 port 443 ... Timed out</span>. This is a different failure mode from everything above — no DNS involved (bypassed via <span class="mono">--resolve</span>), no HTTP response of any kind, just no answer at all at the network layer. Gilbert is actively working this one — he's confirmed this is now the remaining piece to get developers actually connected, separate from the (resolved) FQDN issue above.</div>
-      <div class="q-card"><b>Why this is believable, not a repeat of the old mystery —</b> We already know VNet peering between <span class="mono">clUATvNET</span> (where the VPN gateway lives) and <span class="mono">clDEVvNET</span> (where this subnet lives) works in principle — back on 8/28, <span class="mono">CL-DEV-WEB01</span>, a VM sitting in <span class="mono">clUATvNET</span> itself, successfully reached <span class="mono">20.0.3.165</span> across that peering (test #3 below). The delta between that VM and an actual VPN client is the source address range: a VM has a normal VNet-assigned address, while a VPN client's traffic arrives from the VPN client address pool. That points at one of two likely causes: (1) the NSG on <span class="mono">SonarQubeMCP-Dev-Subnet</span> allows VNet-address traffic but not the VPN client pool specifically, or (2) the VPN Gateway's advertised routes to connected clients haven't picked up this subnet yet, since it's a brand-new <span class="mono">/27</span> added in task #2. Both are squarely network-config items, not application or DNS issues.</div>
-      <div class="q-card"><b>Not the DNS-linking question from below —</b> Worth being precise here so this doesn't get conflated with the still-open Private DNS Zone question further down this page: that one is about name <i>resolution</i> for a VPN client. This is about <i>routing/reachability</i> for a VPN client, and it's a blocker regardless of DNS, since it was tested with DNS bypassed entirely.</div>
+      <div class="q-card resolved"><b>✓ Root cause: a site-to-site VPN traffic rule.</b> The same corrected request (<span class="mono">curl --resolve ...:443:20.0.3.165 .../mcp</span>, no <span class="mono">.internal.</span>) that reached the app cleanly from <span class="mono">CL-DEV-A01</span> was timing out at the TCP layer from an actual VPN-connected developer laptop — no DNS involved (bypassed via <span class="mono">--resolve</span>), no HTTP response, just no answer at all at the network layer. Gilbert traced this to a site-to-site VPN traffic rule that wasn't allowing traffic through to this subnet, and fixed it. Developers have been connecting successfully since.</div>
+      <div class="q-card"><b>Why this was believable, not a repeat of the old FQDN mystery —</b> We already knew VNet peering between <span class="mono">clUATvNET</span> (where the VPN gateway lives) and <span class="mono">clDEVvNET</span> (where this subnet lives) worked in principle — back on 8/28, <span class="mono">CL-DEV-WEB01</span>, a VM sitting in <span class="mono">clUATvNET</span> itself, successfully reached <span class="mono">20.0.3.165</span> across that peering (test #3 below). The delta between that VM and an actual VPN client was the source address range: a VM has a normal VNet-assigned address, while a VPN client's traffic arrives from the VPN client address pool — pointing squarely at a network-config item, not an application or DNS issue, which is exactly where it turned out to be.</div>
+      <div class="q-card"><b>Separately, still needed: the hosts-file workaround for name resolution.</b> There's still no Private DNS Zone or public DNS record for this hostname — that's an independent, still-open item from the routing fix above (see below) — every developer needs the hosts-file entry documented in <a href="../../README.md">README.md</a> regardless.</div>
     </div>
   </section>
 
@@ -614,6 +614,6 @@
 
   <footer>
     <span>NWOW work item #134516 · specs/134516-sonarqube-mcp-server/plan.md</span>
-    <span>Compiled from live Azure CLI inspection, Azure DevTest subscription 1 — 2026-08-31</span>
+    <span>Compiled from live Azure CLI inspection, Azure DevTest subscription 1 — 2026-09-09</span>
   </footer>
 </div>

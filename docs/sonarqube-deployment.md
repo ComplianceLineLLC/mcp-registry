@@ -25,12 +25,16 @@ The SonarQube MCP Server is deployed as a centrally managed Docker container in 
 ### 1. Create the Container Apps Environment (VNet-integrated, internal only)
 
 ```bash
-# Create a dedicated subnet for Container Apps (skip if reusing an existing VNet/subnet)
+# Create a dedicated, delegated subnet for Container Apps (skip if reusing an existing VNet/subnet).
+# A /27 is sufficient for the Consumption workload profile actually used here - a Dedicated profile
+# needs Microsoft's larger /23 recommendation instead. The Microsoft.App/environments delegation is
+# required; without it, environment creation will fail.
 az network vnet subnet create \
   --resource-group <rg-name> \
   --vnet-name <vnet-name> \
   --name sonarqube-mcp-subnet \
-  --address-prefix 10.x.x.0/23
+  --address-prefixes 10.x.x.x/27 \
+  --delegations Microsoft.App/environments
 
 # Create the Container Apps environment with internal-only ingress
 az containerapp env create \
@@ -80,7 +84,7 @@ az containerapp create \
 | `SONARQUBE_TRANSPORT` | Yes | `http` | Enable HTTP mode (Azure Container Apps handles TLS) |
 | `SONARQUBE_HTTP_HOST` | Yes | `0.0.0.0` | Listen on all interfaces inside the container |
 | `SONARQUBE_HTTP_PORT` | Yes | `8080` | Port the container listens on |
-| `SONARQUBE_URL` | Yes | `<internal SonarQube URL>` | Points to the internal SonarQube Server |
+| `SONARQUBE_URL` | Yes | `<your SonarQube Server URL>` | Points to your (public, self-hosted) SonarQube Server — see the Prerequisites note above |
 | `SONARQUBE_READ_ONLY` | Yes | `true` | AI cannot change issue statuses or quality gates |
 | `TELEMETRY_DISABLED` | Yes | `true` | Disables anonymous telemetry to SonarSource |
 | `SONARQUBE_MCP_IN_CONTAINER` | Yes | `true` | Required for correct behavior inside a container runtime |
@@ -89,13 +93,17 @@ az containerapp create \
 
 ### 4. Verify the Deployment
 
-From within the VNet (e.g., via VPN or a bastion host), confirm the server is healthy:
+From within the VNet (e.g., via VPN or a bastion host), confirm the server is healthy. There's no DNS
+record for this hostname, so these commands will fail to resolve even while on VPN unless you've added
+the hosts-file entry documented in [README.md](/README.md)'s Step 1 (or you're running from a machine
+that's natively inside the VNet, like a bastion host):
 
 ```bash
 # Liveness check — should return HTTP 200 with an empty body
 curl https://ca-sonarqube-mcp-dev.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/health
 
-# Version check — should return {"version":"1.24.0"}
+# Version check — compare against the latest release to see if an update is due
+# (see mcp-maintenance.md's "Check for New Versions" step for the full comparison)
 curl https://ca-sonarqube-mcp-dev.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/info
 ```
 
@@ -119,7 +127,7 @@ Developers do **not** need Docker installed. Add the following to `C:\Users\<you
 
 > **Token type:** Must be a SonarQube **USER token**. Project tokens and Global Administrator tokens are not compatible with SonarQube Server's MCP integration.
 
-> **VPN required:** The Container Apps internal URL only resolves within the Azure VNet. Developers must be on VPN.
+> **VPN + hosts-file entry required:** Developers must be on VPN, *and* there's no DNS record for this hostname at all — the required one-time hosts-file entry is documented in [README.md](/README.md)'s Step 1. Without it, this URL won't resolve even while on VPN.
 
 ## Updating the Server
 

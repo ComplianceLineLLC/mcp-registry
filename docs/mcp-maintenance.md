@@ -103,14 +103,16 @@ Subscribe to GitHub Security Advisories for each package:
 3. Update the version in `v0.1/servers/index.json`
 4. Update the version in `v0.1/servers/mcp/<name>/versions/latest/index.json`
 5. Update any version references in `README.md`
-6. For org-managed MCPs (SonarQube): update `imageDigest` in [infrastructure/SonarQubeMCP/main.bicep](../infrastructure/SonarQubeMCP/main.bicep) to the new digest and redeploy (`az deployment sub create --location eastus --template-file main.bicep`); update the version/URL references in [sonarqube-deployment.md](sonarqube-deployment.md) too
+6. For org-managed MCPs (SonarQube): update the running Container App directly (`az containerapp update --name ca-sonarqube-mcp-dev --resource-group rg-ethico-sonarqube-mcp-dev --image <acr>.azurecr.io/sonarsource/sonarqube-mcp@<new-digest>`) — **not** by editing `main.bicep` and redeploying; see [sonarqube-deployment.md](sonarqube-deployment.md)'s "Updating the Server" section and `main.bicep`'s own comment on `imageDigest` for why that parameter is intentionally not part of this flow. Update the version/URL references in [sonarqube-deployment.md](sonarqube-deployment.md) also
 7. Verify all endpoints or run a quick smoke test
 8. Open a PR, request review from a second team member, merge
 
-Steps 2 and 6 are manual today. Once the Azure DevOps Pipeline at `Pipelines/SonarQubeMCP/` (plan.md
-task #7, not yet built) lands, it automates this scan → promote → redeploy → verify sequence — this
-section should be updated to reference the pipeline once that happens, rather than describing manual
-steps that are no longer how updates actually happen.
+Steps 2 and 6 are manual today. An Azure DevOps pipeline that automates this scan → promote → deploy →
+verify sequence has been authored at `devops/Pipelines/SonarQubeMCP/` (plan.md task #7) — it lives in the
+separate `devops` repo, not here, since `mcp-registry` is GitHub-hosted with no Azure DevOps↔GitHub
+pipeline connection. As of this writing it's built and has an open PR there, but hasn't been merged or
+dry-run tested yet — once it has, this section should be updated to reference triggering that pipeline,
+rather than describing these manual steps as the norm.
 
 ## Emergency Security Update Process
 
