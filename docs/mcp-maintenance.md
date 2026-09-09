@@ -45,6 +45,8 @@ npm view @angular/cli version
 # Checking mcp-maintenance.md's inventory table or the registry JSON isn't enough on its own - those
 # are a record of intent, not live truth, and could be out of sync if a step was ever missed. The /info
 # endpoint reflects whatever's genuinely running right now.
+# Prerequisite: you must be on the corporate VPN, with the hosts-file entry from README.md's Step 1
+# added - there's no DNS record for this hostname, so it won't resolve otherwise.
 curl https://ca-sonarqube-mcp-dev.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/info
 gh api repos/SonarSource/sonarqube-mcp-server/releases/latest --jq .tag_name
 ```
