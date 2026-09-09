@@ -48,10 +48,15 @@ npm view @angular/cli version
 ### 2. Security Scan
 
 ```bash
-# Scan all npm-based packages for known vulnerabilities
-npm audit --package-lock-only
+# This repo has no package.json/package-lock.json of its own - generate a scratch lockfile from
+# the pinned versions in the inventory table above, then audit that.
+mkdir -p /tmp/mcp-audit && cd /tmp/mcp-audit
+npm init -y
+npm install --package-lock-only @azure-devops/mcp@2.7.0 @executeautomation/playwright-mcp-server@1.0.0 chrome-devtools-mcp@0.1.0 @angular/cli@0.1.0
+npm audit
 
-# Scan the SonarQube MCP Docker image with Trivy
+# Scan the SonarQube MCP Docker image with Trivy (source image, before promotion - see
+# infrastructure/SonarQubeMCP/RUNBOOK.md#step-3--image-promotion for the actual promote-to-ACR step)
 trivy image sonarsource/sonarqube-mcp:<current-version>
 ```
 

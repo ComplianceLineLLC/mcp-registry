@@ -219,6 +219,7 @@ The SonarQube MCP is centrally hosted by the organization as an Azure Container 
 
 - **Token Requirement:** You must use a SonarQube **USER token** only. Project tokens and Global Administrator tokens are not supported by SonarQube Server's MCP integration and will not work.
 - **Read-Only:** The server enforces read-only mode — you can view issues and analysis results but cannot change issue statuses or quality gates through the MCP.
+- **Can't trigger scans:** This MCP only queries results from analyses that have already run (via CI or a PR build) — it can't run a new SonarQube analysis, locally or otherwise. For local, on-the-fly analysis before you even open a PR, install **[SonarQube for IDE](https://www.sonarsource.com/products/sonarqube/ide/)** (formerly SonarLint) instead — a separate IDE extension available for VS Code, Visual Studio, and JetBrains IDEs, which can also connect to this same SonarQube Server so your local results match what CI will report.
 
 ### Step 1: Network setup
 
@@ -230,6 +231,8 @@ The MCP won't work without this — it's not optional.
    ```text
    20.0.3.165   ca-sonarqube-mcp-dev.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io
    ```
+
+   This IP is the Container Apps Environment's static IP — it would only change if the environment itself were ever rebuilt. If this stops working and you're otherwise on VPN, verify the current value with (or ask IT/DevOps to confirm) `az containerapp env show --name cae-sonarqube-mcp-dev --resource-group rg-ethico-sonarqube-mcp-dev --query properties.staticIp -o tsv` before assuming something else is wrong.
 
    On Windows, add this line to `C:\Windows\System32\drivers\etc\hosts` (requires administrator rights).
 

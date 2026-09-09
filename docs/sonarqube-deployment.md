@@ -10,7 +10,7 @@ The SonarQube MCP Server is deployed as a centrally managed Docker container in 
 - The server is **stateless**: each request carries the developer's own SonarQube USER token via `Authorization: Bearer <token>`
 
 ```
-[Developer + VPN] → [Azure VNet] → [Container App (internal ingress)] → [Internal SonarQube Server]
+[Developer + VPN] → [Azure VNet] → [Container App (internal ingress)] → [SonarQube Server (public, self-hosted)]
 ```
 
 ## Prerequisites
@@ -18,7 +18,7 @@ The SonarQube MCP Server is deployed as a centrally managed Docker container in 
 - Azure subscription with permission to create Container Apps
 - An existing Azure Virtual Network (VNet), or permission to create one
 - VPN Gateway or ExpressRoute providing developer access to the VNet
-- Internal SonarQube Server URL (e.g. `https://sqdev.mycompliancemanagement.com`)
+- SonarQube Server URL (public, self-hosted — e.g. `https://sqdev.mycompliancemanagement.com`; only the Container App/MCP wrapper is VNet-internal, not SonarQube Server itself)
 
 ## Deployment Steps
 
@@ -41,14 +41,20 @@ az containerapp env create \
   --infrastructure-subnet-resource-id /subscriptions/<sub-id>/resourceGroups/<rg>/providers/Microsoft.Network/virtualNetworks/<vnet>/subnets/sonarqube-mcp-subnet
 ```
 
-### 2. Deploy the Container App
+### 2. Promote the image into your own ACR, then deploy from there
+
+Don't point the Container App at the Docker Hub image directly — this project's supply-chain approach is
+to vet the image once (Trivy scan) and promote it into an org-controlled ACR, pinned by digest, so the
+Container App only ever pulls from a source you control. See
+[infrastructure/SonarQubeMCP/RUNBOOK.md](../infrastructure/SonarQubeMCP/RUNBOOK.md#step-3--image-promotion)
+for the actual promotion steps (`az acr import` + reading back the digest).
 
 ```bash
 az containerapp create \
   --name sonarqube-mcp \
   --resource-group <rg-name> \
   --environment sonarqube-mcp-env \
-  --image sonarsource/sonarqube-mcp:1.24.0.3152 \
+  --image <your-acr-name>.azurecr.io/sonarsource/sonarqube-mcp@<digest-from-acr-import> \
   --target-port 8080 \
   --ingress internal \
   --min-replicas 1 \
@@ -57,7 +63,7 @@ az containerapp create \
     SONARQUBE_TRANSPORT=http \
     SONARQUBE_HTTP_HOST=0.0.0.0 \
     SONARQUBE_HTTP_PORT=8080 \
-    SONARQUBE_URL=<your-internal-sonarqube-url> \
+    SONARQUBE_URL=<your-sonarqube-url> \
     SONARQUBE_READ_ONLY=true \
     TELEMETRY_DISABLED=true \
     SONARQUBE_MCP_IN_CONTAINER=true
@@ -125,28 +131,35 @@ See [mcp-maintenance.md](mcp-maintenance.md) for the full update policy. Short v
    - `v0.1/servers/mcp/sonarqube/versions/latest/index.json`
    - `README.md` (any version references)
    - This file (image tag in the deploy command and the rollback section below)
-3. Redeploy the running container:
+3. Trivy-scan the new tag, promote it into ACR by digest, then redeploy via Bicep — **never** point the
+   Container App at the Docker Hub tag directly (see
+   [infrastructure/SonarQubeMCP/RUNBOOK.md](../infrastructure/SonarQubeMCP/RUNBOOK.md#step-3--image-promotion)
+   for the exact commands):
    ```bash
-   az containerapp update \
-     --name sonarqube-mcp \
-     --resource-group <rg-name> \
-     --image sonarsource/sonarqube-mcp:<new-version-tag>
+   az acr import --name <your-acr-name> --source docker.io/sonarsource/sonarqube-mcp:<new-version-tag> --image sonarsource/sonarqube-mcp:<new-version-tag>
+   az acr repository show --name <your-acr-name> --image sonarsource/sonarqube-mcp:<new-version-tag> --query digest -o tsv
+   ```
+   Update `imageDigest` in [infrastructure/SonarQubeMCP/main.bicep](../infrastructure/SonarQubeMCP/main.bicep) to the digest returned above, then redeploy:
+   ```bash
+   az deployment sub create --location eastus --template-file infrastructure/SonarQubeMCP/main.bicep
    ```
 4. Re-verify `/health` and `/info`, then merge the PR
 
 ## Rollback
 
-If an update causes issues, revert immediately:
+If an update causes issues, revert immediately by pointing back at the previously-promoted digest —
+**not** by pulling a Docker Hub tag directly, since only digests that have already been Trivy-scanned and
+promoted into ACR should ever run here:
 
-```bash
-az containerapp update \
-  --name sonarqube-mcp \
-  --resource-group <rg-name> \
-  --image sonarsource/sonarqube-mcp:1.24.0.3152
-```
+1. Set `imageDigest` in [infrastructure/SonarQubeMCP/main.bicep](../infrastructure/SonarQubeMCP/main.bicep) back to the prior known-good digest (see RUNBOOK.md for the promotion history)
+2. Redeploy:
+   ```bash
+   az deployment sub create --location eastus --template-file infrastructure/SonarQubeMCP/main.bicep
+   ```
 
-Then open a PR to revert the registry files to the previous version. (`1.24.0.3152` is both the current
-and the only version ever actually deployed — the originally-planned `1.20.0.2929` was scanned but never
+Then open a PR to revert the registry files to the previous version. (`1.24.0.3152`
+— digest `sha256:edf80a38956d7d8de75166c1ae173b73c8a01a9a62038232ce0b75ead7dc450c` — is both the current
+and the only version ever actually deployed; the originally-planned `1.20.0.2929` was scanned but never
 promoted, see [infrastructure/SonarQubeMCP/RUNBOOK.md](../infrastructure/SonarQubeMCP/RUNBOOK.md#step-3--image-promotion).
-Update this rollback target whenever a future version is promoted, to whatever was running immediately
-before it.)
+Update this rollback target whenever a future version is promoted, to whatever digest was running
+immediately before it.)
