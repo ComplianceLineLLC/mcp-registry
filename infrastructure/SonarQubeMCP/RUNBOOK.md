@@ -1,0 +1,297 @@
+# SonarQube MCP — Infrastructure Deployment Runbook
+
+Human-readable walkthrough of the actual steps taken to stand up this infrastructure, in the order
+they happened. The Bicep in this folder is the source of truth for *what* gets created; this document
+is the source of truth for *how it was actually rolled out* — so the process can be audited, or
+repeated from scratch if this environment is ever rebuilt.
+
+Tracked alongside NWOW work item **#134516**; see [../../specs/134516-sonarqube-mcp-server/plan.md](../../specs/134516-sonarqube-mcp-server/plan.md)
+for the task list and current status.
+
+Commands are given in both PowerShell and bash — use whichever matches your shell.
+
+## Prerequisites
+
+- Access to **Azure DevTest subscription 1** (`326c5c7f-73c8-4e8b-b146-d643c06ced0d`, tenant `complianceline.com`)
+- `az` CLI with the Bicep tooling available (`az bicep build` should run without installing anything extra)
+- Network changes require sign-off from the network team (Gilbert) before anything is created — see the
+  approved design in [network-architecture.html](../../specs/134516-sonarqube-mcp-server/network-architecture.html)
+
+## Step 0 (historical, out of band) — Resource group
+
+`rg-ethico-sonarqube-mcp-dev` (eastus) was created manually on **2026-08-03**, before any Bicep in this
+folder existed — it was needed at the time to scope a Reader role assignment for the `NewRelic-Integrations`
+app registration (see plan.md's Monitoring decision). `main.bicep` now defines this resource group
+declaratively, so a genuine from-scratch rebuild going forward would create it as part of Step 2 below —
+this manual step is a one-time historical fact, not something to repeat.
+
+## Step 1 — Networking: create the delegated subnet
+
+Executed **2026-08-11**, after Gilbert approved the proposed subnet/egress path.
+
+Command run (against the existing shared VNet, in its own resource group — not this workload's):
+
+**PowerShell:**
+
+```powershell
+az network vnet subnet create `
+  --resource-group RG-PolicyManagement `
+  --vnet-name clDEVvNET `
+  --name SonarQubeMCP-Dev-Subnet `
+  --address-prefixes 20.0.3.160/27 `
+  --delegations Microsoft.App/environments `
+  --network-security-group "/subscriptions/326c5c7f-73c8-4e8b-b146-d643c06ced0d/resourceGroups/RG-DEV-RouteTable/providers/Microsoft.Network/networkSecurityGroups/NSG-DEVSubscription" `
+  --route-table "/subscriptions/326c5c7f-73c8-4e8b-b146-d643c06ced0d/resourceGroups/RG-DEV-RouteTable/providers/Microsoft.Network/routeTables/DEV-RouteTable"
+```
+
+**Bash:**
+
+```bash
+az network vnet subnet create \
+  --resource-group RG-PolicyManagement \
+  --vnet-name clDEVvNET \
+  --name SonarQubeMCP-Dev-Subnet \
+  --address-prefixes 20.0.3.160/27 \
+  --delegations Microsoft.App/environments \
+  --network-security-group "/subscriptions/326c5c7f-73c8-4e8b-b146-d643c06ced0d/resourceGroups/RG-DEV-RouteTable/providers/Microsoft.Network/networkSecurityGroups/NSG-DEVSubscription" \
+  --route-table "/subscriptions/326c5c7f-73c8-4e8b-b146-d643c06ced0d/resourceGroups/RG-DEV-RouteTable/providers/Microsoft.Network/routeTables/DEV-RouteTable"
+```
+
+Captured as IaC at [modules/networking.bicep](modules/networking.bicep) for reproducibility — deployed as
+its **own** `az deployment group create` against `RG-PolicyManagement`, deliberately kept separate from
+`main.bicep` (which only ever targets this workload's own resource group). The reasoning: `clDEVvNET` is a
+shared VNet with a dozen other teams' subnets already in it; folding subnet creation into the same
+deployment as this workload's own ACR/Container App would mean every future redeploy of *our* resources
+also carries write access to *shared* network infrastructure.
+
+Why `20.0.3.160/27`: the one open `/27` gap in the VNet's already-carved-up `20.0.3.0/24` block, following
+the same delegation pattern as five sibling Container-Apps subnets.
+
+Verification run after creation:
+
+**PowerShell:**
+
+```powershell
+az network vnet subnet show --resource-group RG-PolicyManagement --vnet-name clDEVvNET `
+  --name SonarQubeMCP-Dev-Subnet `
+  --query "{prefix:addressPrefix, nsg:networkSecurityGroup.id, routeTable:routeTable.id, delegations:delegations[].serviceName}"
+```
+
+**Bash:**
+
+```bash
+az network vnet subnet show --resource-group RG-PolicyManagement --vnet-name clDEVvNET \
+  --name SonarQubeMCP-Dev-Subnet \
+  --query "{prefix:addressPrefix, nsg:networkSecurityGroup.id, routeTable:routeTable.id, delegations:delegations[].serviceName}"
+```
+
+Confirmed: `20.0.3.160/27`, delegated to `Microsoft.App/environments`, joined to `NSG-DEVSubscription` +
+`DEV-RouteTable` — matches the approved design exactly.
+
+## Step 2 — ACR, managed identity, and AcrPull role assignment
+
+**Status: done — 2026-08-11.** Ran successfully; `provisioningState: "Succeeded"` with all four expected
+resources present (the resource group, the ACR, the managed identity, and its `AcrPull` role assignment).
+
+**PowerShell / bash (identical — single line, no continuation needed):**
+
+```shell
+az deployment sub create --location eastus --template-file main.bicep
+```
+
+Created (idempotently, including the resource group from Step 0):
+
+- `rg-ethico-sonarqube-mcp-dev`
+- `ethicosonarqubecrdev` — the Azure Container Registry ([modules/acr.bicep](modules/acr.bicep))
+- `ethico-sonarqube-mcp-mi-dev` — a user-assigned managed identity ([modules/managed-identity.bicep](modules/managed-identity.bicep))
+- An `AcrPull` role assignment granting that identity pull access to the ACR ([modules/acr-role-assignment.bicep](modules/acr-role-assignment.bicep))
+
+## Step 3 — Image promotion
+
+**Status: done — 2026-08-12.** The originally-planned pin, `sonarsource/sonarqube-mcp:1.20.0.2929`, was
+scanned first and came back with **4 unaddressed HIGH findings** (`c-ares` CVE-2026-33630; `nodejs`
+CVE-2026-56846, CVE-2026-56848, CVE-2026-58043 — all `Status: fixed` upstream, meaning newer package
+builds already resolve them). Rather than accept that risk or wait on a rebuild, checked the
+[GitHub Releases page](https://github.com/SonarSource/sonarqube-mcp-server/releases) for newer tags:
+`1.20.0.2929` (our original pin) has four releases ahead of it — `1.21.0.2975`, `1.22.0.3040`,
+`1.23.0.3101`, and the latest, **`1.24.0.3152`**. Trivy-scanned `1.24.0.3152` and it came back **clean**
+(0 findings) — its base Alpine/Node layers had already moved past the vulnerable versions. **Decision:
+promote `1.24.0.3152` instead of the originally-planned `1.20.0.2929`.**
+
+**PowerShell / bash (identical):**
+
+```shell
+docker run --rm aquasec/trivy image --severity HIGH,CRITICAL sonarsource/sonarqube-mcp:1.24.0.3152
+
+az acr import --name ethicosonarqubecrdev --source docker.io/sonarsource/sonarqube-mcp:1.24.0.3152 --image sonarsource/sonarqube-mcp:1.24.0.3152
+
+az acr repository show --name ethicosonarqubecrdev --image sonarsource/sonarqube-mcp:1.24.0.3152 --query digest -o tsv
+```
+
+Imported successfully. Resulting digest — **this is what task #4 pins in the Container App**, not the
+mutable tag:
+
+```text
+sha256:edf80a38956d7d8de75166c1ae173b73c8a01a9a62038232ce0b75ead7dc450c
+```
+
+Full image reference: `ethicosonarqubecrdev.azurecr.io/sonarsource/sonarqube-mcp@sha256:edf80a38956d7d8de75166c1ae173b73c8a01a9a62038232ce0b75ead7dc450c`
+
+**Follow-up required:** this version bump ripples into places still pinned to `1.20.0.2929` —
+`docs/mcp-maintenance.md`'s inventory table, `docs/sonarqube-deployment.md`'s example commands and
+`/info` response, `v0.1/servers/index.json` and `v0.1/servers/mcp/sonarqube/versions/latest/index.json`,
+and `plan.md`'s verification step #2. Task #8 ("Registry & doc updates") already covers touching most of
+these files for the FQDN/execution-model fix — worth doing the version bump in the same pass rather than
+as a second edit to the same files.
+
+## Step 4 — Container Apps Environment, Container App, and Log Analytics (task #4)
+
+**Status: done — 2026-08-26.** First attempt partially failed (see below), fix applied, redeploy
+succeeded — `provisioningState: "Succeeded"`, all 8 resources present in `outputResources`. `main.bicep`
+extended with four new modules:
+
+- [modules/log-analytics.bicep](modules/log-analytics.bicep) — `law-sonarqube-mcp-dev`, `PerGB2018`, 30-day retention
+- [modules/container-apps-environment.bicep](modules/container-apps-environment.bicep) — `internal: true`, wired to the `SonarQubeMCP-Dev-Subnet` from Step 1 (cross-resource-group reference — the subnet lives in `RG-PolicyManagement`, referenced by resource ID string only, no `existing` lookup needed), Consumption workload profile (matches the `/27` subnet sizing — Dedicated profiles need the larger `/23` Microsoft recommends), logs routed to the workspace above via `appLogsConfiguration`
+- [modules/container-app.bicep](modules/container-app.bicep) — pulls the digest-pinned image from ACR (`sha256:edf80a38…`, task #3) using the `ethico-sonarqube-mcp-mi-dev` identity for registry auth; internal ingress on port 8080; env vars per [docs/sonarqube-deployment.md](../../docs/sonarqube-deployment.md); min/max replicas 1/2
+- [modules/diagnostic-settings.bicep](modules/diagnostic-settings.bicep) — `AllMetrics` only, scoped to the Container App
+
+**First deployment attempt:** the resource group, ACR, identity, role assignment, Log Analytics
+workspace, Container Apps Environment, and Container App **all deployed successfully** —
+`ca-sonarqube-mcp-dev` came up with `provisioningState: "Succeeded"` and FQDN
+`ca-sonarqube-mcp-dev.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io`. Only the last
+module, `deploy-diagnostic-settings`, failed:
+
+```text
+BadRequest: Category 'ContainerAppConsoleLogs' is not supported.
+```
+
+**Root cause:** `diagnostic-settings.bicep` originally requested `ContainerAppConsoleLogs` and
+`ContainerAppSystemLogs` scoped to the Container App — those log categories only exist on
+`Microsoft.App/managedEnvironments` (the CAE), not `Microsoft.App/containerApps` (confirmed via
+`az monitor diagnostic-settings categories list --resource-type <type> --resource <name> -g <rg>`
+against both resource types). The Container App resource only exposes `AllMetrics` through diagnostic
+settings. Rather than move the log categories onto the environment, dropped them entirely — the
+environment's `appLogsConfiguration` (already deployed, already working) covers console/system logs via
+a different pipe to the same workspace, so adding them again via diagnostic settings would just
+double-ingest the same data. Fixed module now requests `AllMetrics` only.
+
+Compiles clean (`az bicep build`, no warnings) after the fix.
+
+**PowerShell / bash (identical — single line):**
+
+```shell
+az deployment sub create --location eastus --template-file main.bicep
+```
+
+Idempotent with Steps 2–3 and the first attempt's successful resources — re-running this confirms
+everything already deployed is unchanged, then retries only `deploy-diagnostic-settings` with the fix.
+
+**Redeploy result:** succeeded in 56.6s. Final outputs:
+
+```text
+containerAppFqdn:            ca-sonarqube-mcp-dev.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io
+containerAppsEnvironmentId:  /subscriptions/.../resourceGroups/rg-ethico-sonarqube-mcp-dev/providers/Microsoft.App/managedEnvironments/cae-sonarqube-mcp-dev
+acrLoginServer:               ethicosonarqubecrdev.azurecr.io
+managedIdentityId:            /subscriptions/.../resourceGroups/rg-ethico-sonarqube-mcp-dev/providers/Microsoft.ManagedIdentity/userAssignedIdentities/ethico-sonarqube-mcp-mi-dev
+```
+
+This FQDN is what task #8 substitutes for the `<container-app-fqdn>` placeholders in the registry JSON
+and docs.
+
+## Step 4a — Environment-level HTTP/system logs (2026-08-28, diagnostic)
+
+**Status: pending deploy.** Added [modules/environment-diagnostic-settings.bicep](modules/environment-diagnostic-settings.bicep),
+enabling `ContainerAppHTTPLogs` and `ContainerAppSystemLogs` on the Container Apps Environment itself
+(`cae-sonarqube-mcp-dev`) — distinct from [modules/diagnostic-settings.bicep](modules/diagnostic-settings.bicep),
+which only covers `AllMetrics` on the Container App (that resource type has no log categories at all,
+confirmed during the diagnostic-settings bug fix in Step 4).
+
+Context: reachability testing this week found that a request sent directly to the environment's static
+IP (`20.0.3.165`), bypassing DNS entirely via `curl --resolve`, from a VM natively inside `clDEVvNET`
+with zero peering involved, is still rejected by Azure's platform as "this Container App is stopped or
+does not exist" — despite the app itself being confirmed healthy and the revision showing
+`Healthy`/`Running` with 100% traffic. `ContainerAppHTTPLogs` should show, authoritatively, whether these
+test requests even reached the platform's edge proxy and what it decided — turning a black-box HTTP
+response into an actual, inspectable log line. Full diagnostic trail and leading theory (the subnet's
+`0.0.0.0/0`-to-NVA route interfering with Container Apps' own internal platform requirements) are in
+[network-architecture.html](../../specs/134516-sonarqube-mcp-server/network-architecture.html) — shared
+with Gilbert, who's since had to step away for a family emergency.
+
+```shell
+az deployment sub create --location eastus --template-file main.bicep
+```
+
+After deploying, re-run one of the `curl --resolve` tests from Step 4's reachability testing, then query
+the workspace, e.g.:
+
+```kusto
+ContainerAppSystemLogs_CL
+| where TimeGenerated > ago(15m)
+| order by TimeGenerated desc
+```
+
+(swap in `ContainerAppConsoleLogs_CL` / an HTTP-logs equivalent table name once confirmed — exact table
+name in Log Analytics to be verified once data starts flowing.)
+
+**Resolved 2026-08-31.** Root cause was the FQDN itself, not the network or the app. Every test above used
+`ca-sonarqube-mcp-dev.internal.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io` — the exact value
+`main.bicep`'s `containerAppFqdn` output reported, and the pattern Microsoft's own docs describe for
+internal Container Apps environments. That hostname was never actually bound to anything in Azure's
+ingress: TCP/TLS to `20.0.3.165` always succeeded (same environment, doesn't check the Host header) while
+every real HTTP request got the generic "stopped or does not exist" 404, and `ContainerAppHTTPLogs`/
+`ContainerAppSystemLogs` stayed empty because there was no registered app for the platform to log a
+decision against. Dropping the `.internal.` segment —
+`ca-sonarqube-mcp-dev.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io` — routes correctly; confirmed via
+`curl --resolve ...:443:20.0.3.165 .../mcp -H "Authorization: Bearer <token>"`, which returned a genuine
+`405 Method Not Allowed` from the app's own Jetty server (GET isn't a valid method against `/mcp`), not
+Azure's synthetic 404. This contradicts Microsoft's documented naming convention for internal
+environments, so it's still worth a low-priority informational note to Microsoft/Gilbert, but it's no
+longer blocking. All FQDN references across the repo have been corrected to drop `.internal.`. **Still
+open:** whether the DNS gap noted below (no Private DNS Zone; resolution originally failed from
+CL-DEV-WEB01) still applies to the corrected hostname for a typical developer machine, or whether public
+DNS already resolves it the way CL-DEV-A01 did during this test.
+
+**Removed 2026-08-31.** Now that the root cause above is found, this diagnostic-only logging is no longer
+needed — [modules/environment-diagnostic-settings.bicep](modules/environment-diagnostic-settings.bicep)
+and its module block in `main.bicep` have been deleted. The already-deployed diagnostic setting resource
+(`diag-sonarqube-mcp-env`, on `cae-sonarqube-mcp-dev`) isn't removed automatically by dropping it from the
+template — `az deployment sub create` runs incrementally and won't delete a resource just because it's no
+longer in the file. Delete it directly:
+
+```shell
+az monitor diagnostic-settings delete --name diag-sonarqube-mcp-env --resource cae-sonarqube-mcp-dev --resource-group rg-ethico-sonarqube-mcp-dev --resource-type Microsoft.App/managedEnvironments
+```
+
+## Step 5 — Monitoring (task #5)
+
+**Status: done — 2026-08-28.** Deployed successfully; `provisioningState: "Succeeded"` with all 5
+resources present in `outputResources` (the Action Group and all three metric alerts, plus the log-based
+alert). Three modules extending `main.bicep`:
+
+- [modules/action-group.bicep](modules/action-group.bicep) — `ag-sonarqube-mcp-dev`, emails
+  `ethico-infra@ethico.com` (a distribution group, membership expected to change over time)
+- [modules/metric-alerts.bicep](modules/metric-alerts.bicep) — three separate metric alert rules against
+  the Container App, using metric names confirmed via `az monitor metrics list-definitions` rather than
+  guessed: `RestartCount` > 0 (proxy for health-probe failures — Container Apps has no direct "failed
+  probe" metric), `CpuPercentage` > 80%, `MemoryPercentage` > 80%. Three separate rules rather than one
+  multi-criteria rule, since Azure metric alert criteria under `allOf` require ALL conditions to breach
+  simultaneously to fire — not what we want for "CPU high OR memory high OR a restart happened"
+- [modules/log-alert.bicep](modules/log-alert.bicep) — a `scheduledQueryRules` alert querying
+  `ContainerAppConsoleLogs_CL` for `Log_s contains "ERROR"` — the legacy custom-log table confirmed to
+  have real data flowing (found during the ingress investigation), not the newer resource-specific tables
+  still awaiting their first data
+
+Compiles clean (`az bicep build`, no warnings).
+
+**PowerShell / bash (identical — single line):**
+
+```shell
+az deployment sub create --location eastus --template-file main.bicep
+```
+
+Idempotent with Steps 2–4a — re-running this confirms everything already deployed is unchanged, then adds
+the Action Group and three alert rules.
+
+## Step 6 — Pipeline (task #7)
+
+**Status: pending.** Documented here once executed.

@@ -17,13 +17,13 @@ By centralizing our MCP configurations here, we achieve:
 | **Figma** | Remote (HTTP) | Official Figma MCP server for design file access and collaboration. |
 | **Microsoft Learn** | Remote (HTTP) | Access to Microsoft Learn content and interactive tutorials. |
 | **Playwright** | Local (stdio) | Browser automation and end-to-end testing assistance. |
+| **SonarQube** | Internal Remote (HTTPS — Azure Container Apps, VNet-restricted) | Code quality and security analysis via centrally hosted SonarQube MCP Server. |
 
 
 ## 🛠 Future Integrations (Phase 3)
 | Server Name | Type | Description |
 | :--- | :--- | :--- |
 | **Postman** | Remote (HTTP) | API testing and automation integration. |
-| **SonarQube** | Remote (HTTP) | Code quality and security analysis. |
 
 ## 🛠 Future Integrations (TBD)
 | Server Name | Type | Description |
@@ -213,10 +213,147 @@ Key points:
   The Playwright MCP will assist with test code and local browser automation.
 
 ---
+## **SonarQube** (Internal Remote — Azure Container Apps)
+
+The SonarQube MCP is centrally hosted by the organization as an Azure Container Apps instance with **internal-only ingress** (no public internet endpoint). Docker is **not** required on your machine.
+
+- **Token Requirement:** You must use a SonarQube **USER token** only. Project tokens and Global Administrator tokens are not supported by SonarQube Server's MCP integration and will not work.
+- **Read-Only:** The server enforces read-only mode — you can view issues and analysis results but cannot change issue statuses or quality gates through the MCP.
+- **Can't trigger scans:** This MCP only queries results from analyses that have already run (via CI or a PR build) — it can't run a new SonarQube analysis, locally or otherwise. For local, on-the-fly analysis before you even open a PR, install **[SonarQube for IDE](https://www.sonarsource.com/products/sonarqube/ide/)** (formerly SonarLint) instead — a separate IDE extension available for VS Code, Visual Studio, and JetBrains IDEs, which can also connect to this same SonarQube Server so your local results match what CI will report.
+
+### Step 1: Network setup
+
+The MCP won't work without this — it's not optional.
+
+1. Connect to the **corporate VPN**. The server has internal-only ingress, with no public internet endpoint.
+2. There's currently no DNS entry for this hostname, so add a one-time hosts-file entry mapping it to its internal IP:
+
+   ```text
+   20.0.3.165   ca-sonarqube-mcp-dev.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io
+   ```
+
+   This IP is the Container Apps Environment's static IP — it would only change if the environment itself were ever rebuilt. If this stops working and you're otherwise on VPN, verify the current value with (or ask IT/DevOps to confirm) `az containerapp env show --name cae-sonarqube-mcp-dev --resource-group rg-ethico-sonarqube-mcp-dev --query properties.staticIp -o tsv` before assuming something else is wrong.
+
+   On Windows, add this line to `C:\Windows\System32\drivers\etc\hosts` (requires administrator rights).
+
+### Step 2: Generate your SonarQube USER token
+
+1. Sign in to `https://sqdev.mycompliancemanagement.com`
+2. Go to **My Account → Security → Generate Tokens**
+3. For **Type**, choose **User** — not Project or Global Administrator; those are rejected by the MCP
+4. Name it `mcp-<your-username>` (e.g. `mcp-jsmith`) so it's distinguishable from other tokens like CI/CD scanner tokens in your account
+5. **Set an expiration date**, e.g. 90 days — do not choose "No expiration." 
+Note: Our SonarQube current license doesn't allow us to eliminate the option. Tokens without expiration dates are actively monitored.
+6. Copy the generated token now — it won't be shown again
+
+> **This token is personal.** Don't share it or commit it anywhere. It ties every request the MCP makes back to your own SonarQube account and audit log.
+
+### Step 3: Connect from your MCP client
+
+<details>
+<summary><strong>VS Code (GitHub Copilot)</strong></summary>
+
+1. Type `@mcp` in Copilot Chat and locate **SonarQube** in the Organization Approved list.
+2. Install it via the editor prompt — no local package to install, since this is a remote server (same as Figma).
+3. Installing adds a bare entry with no authentication configured — you need to add that yourself. Open the file `@mcp` installed into (check `.vscode/mcp.json` in your workspace first, otherwise `C:\Users\<your user>\AppData\Roaming\Code\User\mcp.json`), and add an `inputs` entry plus a `headers` block to the `mcp/sonarqube` server so it looks like this:
+
+```json
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "sonarqube-token",
+      "description": "SonarQube USER token (mcp-<username>)",
+      "password": true
+    }
+  ],
+  "servers": {
+    "mcp/sonarqube": {
+      "type": "http",
+      "url": "https://ca-sonarqube-mcp-dev.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/mcp",
+      "headers": {
+        "Authorization": "Bearer ${input:sonarqube-token}"
+      }
+    }
+  }
+}
+```
+
+4. Start the server. VS Code prompts you for your token once, then stores it securely and reuses it on future starts — you won't be asked again.
+
+> **If you skip step 3 and try starting the server first**, VS Code shows a "Dynamic Client Registration not supported" dialog — it's incorrectly assuming this server uses OAuth. Click **Cancel**, don't provide a manual client ID, then complete step 3 and start the server again.
+>
+> If the secure prompt ever misbehaves, a plain hardcoded header also works (stores the token in plaintext in the file, so treat the file accordingly):
+> ```json
+> "headers": { "Authorization": "Bearer <your-sonarqube-user-token>" }
+> ```
+>
+> **If you ever uninstall and reinstall this MCP**, you'll need to redo step 3 — that's expected, not a sign something's broken.
+
+</details>
+
+<details>
+<summary><strong>Claude Code (VS Code extension / CLI)</strong></summary>
+
+Run (works the same whether you're in a plain terminal or VS Code's integrated terminal — Claude Code's config is shared between the CLI and the VS Code extension):
+
+```shell
+claude mcp add sonarqube --transport http https://ca-sonarqube-mcp-dev.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/mcp --header "Authorization: Bearer <your-sonarqube-user-token>"
+```
+
+Replace `<your-sonarqube-user-token>` with the token from Step 2. This adds the server to your user-level Claude Code config.
+
+If you'd rather edit the config file directly, note that Claude Code's format differs from VS Code's — the top-level key is `mcpServers`, not `servers`, and the server name has no `mcp/` prefix:
+
+```json
+{
+  "mcpServers": {
+    "sonarqube": {
+      "type": "http",
+      "url": "https://ca-sonarqube-mcp-dev.thankfulmoss-c6ccc4d1.eastus.azurecontainerapps.io/mcp",
+      "headers": {
+        "Authorization": "Bearer <your-sonarqube-user-token>"
+      }
+    }
+  }
+}
+```
+
+</details>
+
+### Using it
+
+Once configured, you can ask prompts such as:
+
+`Show me the open issues for project my-project in SonarQube`
+
+`What security hotspots are flagged in the latest analysis of my-project?`
+
+`List code smells in the authentication module`
+
+The SonarQube MCP will fetch analysis results from the internal SonarQube Server and surface them directly in your chat, helping you resolve issues without leaving your editor.
+
+> **Using the Claude Code CLI non-interactively** (e.g. `-p`/print mode, or scripting): print mode can't show a permission-approval prompt at all, so a tool call will just fail with nothing to approve unless you pre-authorize it, e.g. `claude -p "..." --allowedTools mcp__sonarqube__*`. Interactive use (`claude` or `claude "..."`) doesn't need this — you'll get a normal approval prompt.
+
+### If your token expires
+
+An expired or invalid token shows up as a `401` error from the MCP. Generate a replacement using the same steps as Step 2, then update it in your `mcp.json` (VS Code) or re-run `claude mcp add` (Claude Code) with the new value.
+
+For full deployment and operations details, see [docs/sonarqube-deployment.md](docs/sonarqube-deployment.md).
+
+---
 ## 📂 Repository Structure
 This repo follows the **MCP Registry Specification v0.1**. Because this is a static site, we use an `index.json` pattern:
 * `/v0.1/servers/index.json` - The master list of available tools.
 * `/v0.1/servers/mcp/[name]/versions/latest/index.json` - Specific execution logic for each tool.
+
+## ⚙️ Operations & Maintenance
+The SonarQube MCP is the first organization-managed MCP in this registry, requiring periodic updates by the IT/DevOps team.
+
+| Document | Purpose |
+| :--- | :--- |
+| [docs/sonarqube-deployment.md](docs/sonarqube-deployment.md) | Azure Container Apps deployment guide for the SonarQube MCP Server |
+| [docs/mcp-maintenance.md](docs/mcp-maintenance.md) | Monthly update and security review process for all MCPs in this registry |
 
 ## 🔐 Contribution Policy
 1. All changes must be made via a **Feature Branch**.
