@@ -48,20 +48,31 @@ With that corrected, **full entry it is**: build `v0.1/servers/mcp/agentcontext/
 - **Auth shape:** two headers, `X-AgentContext-Actor` (developer email) and `X-AgentContext-Token` (per-repo secret from the `agentcontext-handler` admin UI) — not a single shared bearer token.
 - **`agentcontext-handler` admin access is not a blocker.** Its role is provisioning — issuing/revoking per-repo tokens — and doesn't affect the registry-entry design. Separately, tokens for a number of repos (disclosure-report, mcr-net, template-builder, etc.) already exist on the Repo Tokens wiki page, so additional local `agentcontext-cli init-repo` test runs don't need to wait on Walter's admin access coming through.
 - **Repo Tokens wiki page stays as-is.** Reviewed and decided: it sits behind Azure DevOps auth, so cleartext tokens there don't create exposure — the actual risk this plan guards against is a token leaking into something *this repo publishes* (the public GitHub Pages site), not the ADO wiki itself.
-- **Copilot's connection is gated by this registry, full stop — there's no way to test it pre-registration.** GitHub's org-level Copilot MCP policy (the README's "Registry Only" enforcement) only permits servers listed in this registry; unlike Claude Code (which reads `.mcp.json` directly, no registry involved), Copilot cannot attempt a connection to AgentContext until *something* — stub or full entry — exists here. That fixes the sequencing: build an entry → preview it live by pointing GitHub Pages at this branch (as planned) → test Copilot for real → then merge. It does not, on its own, decide which shape the entry should be.
+- **Copilot's connection is gated by this registry — now confirmed by a live test, not just policy inference.** GitHub's org-level Copilot MCP policy (the README's "Registry Only" enforcement) only permits servers listed in this registry; unlike Claude Code (which reads `.mcp.json` directly, no registry involved), Copilot cannot attempt a connection to AgentContext until *something* — stub or full entry — exists here. That fixes the sequencing: build an entry → preview it live by pointing GitHub Pages at this branch (as planned) → test Copilot for real → then merge. It does not, on its own, decide which shape the entry should be.
+
+## Live test (2026-09-11): CLI-only Copilot config does not work — registry entry is load-bearing
+
+Ran `agentcontext-cli init-repo` (selecting Copilot) in `mcr.net` and `disclosurereport`, then tested GitHub Copilot Chat directly against a correctly-populated `.vscode/mcp.json` (single-folder VS Code window, `Chat` tab confirmed active — not the separate `Claude Code` extension tab, which was the first false start):
+
+- Copilot's response: *"I couldn't call `get_layered_context`; the AgentContext MCP tool isn't available in this session."*
+- Its own "servers with unstarted tools" banner named `Foundry MCP` and `mcp/azure-devops` (both registry-approved) — **`agentcontext-knowledge` wasn't listed at all**, even though `.vscode/mcp.json` genuinely declares it.
+
+This is a clean result (first attempt was invalidated by testing in `mycm.net`, which never had `.vscode/mcp.json` populated for Copilot at all — only `.mcp.json` for Claude Code — so that run proved nothing). The `mcr.net` retest is conclusive: **Copilot filters out non-registry servers before they're even offered as startable**, not just from `@mcp` search. So the CLI's Copilot scaffolding is currently correct but functionally inert — it cannot do anything for Copilot until this registry actually carries the entry. This resolves the earlier open question in favor of the registry being genuinely required (not just a discoverability nicety), and raises the priority of tasks 3/6 below.
+
+**Side finding, unproven but worth flagging:** the CLI names the server identically (`agentcontext-knowledge`) in every repo's `.vscode/mcp.json`/`.mcp.json`. A developer with more than one AgentContext-enabled repo open in the same multi-root VS Code workspace would have three same-named server definitions with three different repo tokens — untested what VS Code/Copilot actually does in that case (silently pick one? error? merge?). Not blocking this issue, but worth a note for whoever owns the CLI if it comes up later.
 
 ## Open questions to resolve before/while implementing
 
 - [x] ~~Stub vs. full-entry?~~ **Full entry**, mirroring SonarQube's `headers[].variables` shape — see design section above. Depended on correcting the stale "VS Code doesn't honor headers" finding.
 - [x] ~~Does `agentcontext-handler` need to be looped in?~~ No — provisioning-only, not a design dependency, and tokens for test repos are already available without it.
 - [x] ~~Should the Repo Tokens wiki page move?~~ No — staying behind ADO auth is sufficient; not this repo's exposure surface.
-- [ ] Confirm current rollout state across repos: in progress — about to run `agentcontext-cli init-repo` (Claude Code) against a second repo using an existing Repo Tokens value, to confirm the `.mcp.json` shape is consistent (same URL, differing only by token/actor) before relying on that assumption in the registry entry.
+- [x] ~~Confirm current rollout state across repos.~~ Done — ran the CLI (both Claude Code and Copilot options) against `mcr.net` and `disclosurereport`. Pattern is consistent: same URL, differing only by `X-AgentContext-Token`/actor; `CLAUDE.md` gets appended to (not overwritten) via an `<!-- agentcontext:managed -->` marker block. See the live-test section above for the Copilot-specific finding this surfaced.
 
 ## Task List & Estimates
 
 | # | Task | Estimate |
 |---|---|---|
-| 1 | Run `agentcontext-cli init-repo` (Claude Code) on a second repo using an existing Repo Tokens value; diff its `.mcp.json` against `mycm.net`'s to confirm the pattern | 15–30 min |
+| 1 | ~~Run `agentcontext-cli init-repo` on a second repo~~ — **Done**, see live-test section above | ~~15–30 min~~ |
 | 2 | Update [Appendix A](https://dev.azure.com/Ethico/NWOW/_wiki/wikis/NWOW.wiki/636/Appendix-A-MCP-Server-Registry-Status-Definitions)'s AgentContext row: fill in Permitted for Local Use / MCP Registry Status / Network Boundary | 15 min |
 | 3 | Add `v0.1/servers/mcp/agentcontext/versions/latest/index.json` + master `v0.1/servers/index.json` entry: full `remotes[].headers[]` block with two parameterized variables (`X-AgentContext-Token`, `X-AgentContext-Actor`), mirroring SonarQube's schema exactly | 0.5–1 day |
 | 4 | README.md: add an "AgentContext" section (Current Integrations table row + usage instructions), following the existing per-server section pattern | 0.5 day |
