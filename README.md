@@ -18,6 +18,7 @@ By centralizing our MCP configurations here, we achieve:
 | **Microsoft Learn** | Remote (HTTP) | Access to Microsoft Learn content and interactive tutorials. |
 | **Playwright** | Local (stdio) | Browser automation and end-to-end testing assistance. |
 | **SonarQube** | Internal Remote (HTTPS — Azure Container Apps, VNet-restricted) | Code quality and security analysis via centrally hosted SonarQube MCP Server. |
+| **AgentContext** | Internal Remote (HTTP — internal network, VPN-restricted) | Layered-context knowledge server (constitution → org → project → repo rules + recorded learnings) for AI-native engineering. |
 
 
 ## 🛠 Future Integrations (Phase 3)
@@ -340,6 +341,72 @@ The SonarQube MCP will fetch analysis results from the internal SonarQube Server
 An expired or invalid token shows up as a `401` error from the MCP. Generate a replacement using the same steps as Step 2, then update it in your `mcp.json` (VS Code) or re-run `claude mcp add` (Claude Code) with the new value.
 
 For full deployment and operations details, see [docs/sonarqube-deployment.md](docs/sonarqube-deployment.md).
+
+---
+## **AgentContext** (Internal Remote — HTTP)
+
+AgentContext is a layered-context knowledge server (developed by Seneca Global, hosted internally by Ethico): it feeds an assistant the merged constitution → org → project → repo rules plus recorded learnings for the repo you're in, and lets it record new learnings back.
+
+- **Token requirement:** unlike every other entry above, the secret here is **per-repository, not per-developer**. Each repo has its own token, issued via the `agentcontext-handler` admin UI and tracked on the internal Repo Tokens wiki page — ask whoever holds admin access there for your repo's token.
+- **Network:** internal-only (`http://10.150.3.4`) — requires the corporate VPN or office network, same as SonarQube. No public endpoint, no hosts-file workaround needed (it's a raw IP, not a hostname).
+
+### Step 1: Network setup
+Connect to the **corporate VPN** (or be on the office network) — the server has no public internet endpoint.
+
+### Step 2: Get your repo's token
+Ask whoever holds `agentcontext-handler` admin access for the token issued to your specific repo, plus confirm the current server URL.
+
+### Step 3: Connect from your MCP client
+
+<details>
+<summary><strong>VS Code (GitHub Copilot)</strong></summary>
+
+1. Type `@mcp` in Copilot Chat and locate **AgentContext** in the Organization Approved list, then install it.
+2. The registry entry declares two required header variables, so VS Code should prompt you for both on install — your repo token and your email address. If it doesn't (as with SonarQube, VS Code's gallery installer doesn't always honor this), open `.vscode/mcp.json` and add them yourself:
+
+```json
+{
+  "servers": {
+    "mcp/agentcontext": {
+      "type": "http",
+      "url": "http://10.150.3.4/mcp",
+      "headers": {
+        "X-AgentContext-Token": "<this repo's token>",
+        "X-AgentContext-Actor": "<your email>"
+      }
+    }
+  }
+}
+```
+
+> **If you ever uninstall and reinstall this MCP**, you'll need to redo step 2 — that's expected.
+
+</details>
+
+<details>
+<summary><strong>Claude Code / Cursor / Codex (agentcontext-cli)</strong></summary>
+
+These clients aren't gated by this registry, so the simpler path is the dedicated CLI rather than the block above:
+
+```shell
+npm install -g @senecaglobalinc/agentcontext-cli
+cd /path/to/your-repo
+agentcontext-cli init-repo
+```
+
+It prompts for the server URL and your repo token, then scaffolds the right config for whichever tool(s) you select — see [Setup — AgentContext MCP](https://dev.azure.com/Ethico/NWOW/_wiki/wikis/NWOW.wiki/736/Setup-%E2%80%94-AgentContext-MCP) on the internal wiki for the full walkthrough.
+
+</details>
+
+### Using it
+
+Once configured, you can ask prompts such as:
+
+`What does get_layered_context say about this repo?`
+
+`Search for existing patterns before I write a new webhook handler`
+
+The assistant will pull the merged rule set for this repo and any recorded learnings, and can save new ones back via `save_learning`.
 
 ---
 ## 📂 Repository Structure
