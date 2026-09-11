@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "count": 7
+    "count": 8
   },
   "servers": [
     {
@@ -193,6 +193,59 @@
                     "description": "Your SonarQube USER token (My Account → Security → Generate Tokens, Type: User)",
                     "isRequired": true,
                     "isSecret": true
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "_meta": {
+        "io.modelcontextprotocol.registry/official": {
+          "isLatest": true,
+          "status": "active",
+          "updatedAt": "2026-09-11T00:00:00Z"
+        }
+      },
+      "server": {
+        "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+        "name": "mcp/agentcontext",
+        "title": "AgentContext",
+        "description": "Internally-hosted layered-context knowledge server (constitution → org → project → repo rules + recorded learnings) for AI-native engineering. Developed by Seneca Global, hosted and operated on Ethico's own internal network.",
+        "version": "1.0.0",
+        "executionModel": "remote-http",
+        "remotes": [
+          {
+            "transportType": "http",
+            "url": "http://10.150.3.4/mcp",
+            "headers": [
+              {
+                "name": "X-AgentContext-Token",
+                "description": "This repository's AgentContext token — one per repo, not per developer. Issued via the agentcontext-handler admin UI (see the Repo Tokens page on the internal wiki).",
+                "isRequired": true,
+                "isSecret": true,
+                "value": "{agentcontext_repo_token}",
+                "variables": {
+                  "agentcontext_repo_token": {
+                    "description": "This repo's AgentContext token (agentcontext-handler admin UI / Repo Tokens wiki page)",
+                    "isRequired": true,
+                    "isSecret": true
+                  }
+                }
+              },
+              {
+                "name": "X-AgentContext-Actor",
+                "description": "Your email address, sent for audit attribution of AgentContext calls.",
+                "isRequired": true,
+                "isSecret": false,
+                "value": "{agentcontext_actor_email}",
+                "variables": {
+                  "agentcontext_actor_email": {
+                    "description": "Your Ethico email address",
+                    "isRequired": true,
+                    "isSecret": false
                   }
                 }
               }
