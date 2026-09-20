@@ -20,7 +20,7 @@ This document defines how the IT/DevOps team reviews, updates, and secures all M
 | Angular | Developer-local | `0.1.0` | `@angular/cli` (npm) | https://www.npmjs.com/package/@angular/cli |
 | Microsoft Learn | Vendor-managed | N/A (remote) | `https://learn.microsoft.com/api/mcp` | https://github.com/MicrosoftDocs/mcp |
 | Figma | Vendor-managed | N/A (remote) | `https://mcp.figma.com/mcp` | https://www.figma.com/developers/mcp |
-| SonarQube | Org-managed | `1.24.0.3152` | `ethicosonarqubecrdev.azurecr.io/sonarsource/sonarqube-mcp` (ACR, promoted from Docker Hub — see [infrastructure/SonarQubeMCP/RUNBOOK.md](../infrastructure/SonarQubeMCP/RUNBOOK.md)) | https://github.com/SonarSource/sonarqube-mcp-server/releases |
+| SonarQube | Org-managed | `1.27.0.4335` | `ethicosonarqubecrdev.azurecr.io/sonarsource/sonarqube-mcp` (ACR, promoted from Docker Hub — see [infrastructure/SonarQubeMCP/RUNBOOK.md](../infrastructure/SonarQubeMCP/RUNBOOK.md)) | https://github.com/SonarSource/sonarqube-mcp-server/releases |
 
 ## Monthly Review Checklist
 
@@ -112,9 +112,12 @@ Subscribe to GitHub Security Advisories for each package:
 Steps 2 and 6 are manual today. An Azure DevOps pipeline that automates this scan → promote → deploy →
 verify sequence has been authored at `devops/Pipelines/SonarQubeMCP/` (plan.md task #7) — it lives in the
 separate `devops` repo, not here, since `mcp-registry` is GitHub-hosted with no Azure DevOps↔GitHub
-pipeline connection. As of this writing it's built and has an open PR there, but hasn't been merged or
-dry-run tested yet — once it has, this section should be updated to reference triggering that pipeline,
-rather than describing these manual steps as the norm.
+pipeline connection. **Update 2026-09-20:** the pipeline has been dry-run tested successfully — it
+promoted `1.27.0.4335` end to end (scan → promote → deploy → verify → notify) with no manual
+intervention, and this is in fact the version now actually running. The PR (devops repo, #11797) is
+still open pending a couple of temporary test-only settings being reverted before merge — once merged,
+this section should be updated to reference triggering that pipeline, rather than describing these
+manual steps as the norm.
 
 ## Emergency Security Update Process
 

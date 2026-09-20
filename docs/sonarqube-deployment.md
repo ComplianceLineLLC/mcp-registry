@@ -164,10 +164,12 @@ run here, and a routine rollback has no reason to touch the rest of the infrastr
 az containerapp update --name ca-sonarqube-mcp-dev --resource-group rg-ethico-sonarqube-mcp-dev --image <your-acr-name>.azurecr.io/sonarsource/sonarqube-mcp@<prior-known-good-digest>
 ```
 
-Then open a PR to revert the registry files to the previous version. (`1.24.0.3152`
-— digest `sha256:edf80a38956d7d8de75166c1ae173b73c8a01a9a62038232ce0b75ead7dc450c` — is both the current
-and the only version ever actually deployed; the originally-planned `1.20.0.2929` was scanned but never
-promoted, see [infrastructure/SonarQubeMCP/RUNBOOK.md](../infrastructure/SonarQubeMCP/RUNBOOK.md#step-3--image-promotion).
+Then open a PR to revert the registry files to the previous version. (`1.27.0.4335`
+— digest `sha256:21bb7bf785a8c9cbe19553f6957d83ef45138926bbb15ca9e1fc4895e5026b6f` — is the current
+version, promoted 2026-09-20 via the `devops` repo's image-update pipeline (task #7). The prior-known-good
+rollback target is `1.24.0.3152`, digest `sha256:edf80a38956d7d8de75166c1ae173b73c8a01a9a62038232ce0b75ead7dc450c`
+— the originally-planned `1.20.0.2929` was scanned but never promoted, see
+[infrastructure/SonarQubeMCP/RUNBOOK.md](../infrastructure/SonarQubeMCP/RUNBOOK.md#step-3--image-promotion).
 Update this rollback target whenever a future version is promoted, to whatever digest was running
 immediately before it.)
 
